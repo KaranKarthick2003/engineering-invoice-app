@@ -357,6 +357,44 @@ function closeInvoiceModal() {
     document.getElementById('invoice-modal').style.display = 'none';
 }
 
+// Invoice functions
+async function handleInvoiceSubmit(e) {
+    e.preventDefault();
+    console.log('Invoice form submitted');
+    
+    // Get form data
+    const formData = new FormData(e.target);
+    const invoiceData = Object.fromEntries(formData.entries());
+    
+    try {
+        // Save invoice (placeholder for now)
+        console.log('Invoice data:', invoiceData);
+        alert('Invoice saved successfully!');
+    } catch (error) {
+        console.error('Error saving invoice:', error);
+        alert('Error saving invoice. Please try again.');
+    }
+}
+
+async function handleClientSubmit(e) {
+    e.preventDefault();
+    console.log('Client form submitted');
+    
+    // Get form data
+    const formData = new FormData(e.target);
+    const clientData = Object.fromEntries(formData.entries());
+    
+    try {
+        // Save client (placeholder for now)
+        console.log('Client data:', clientData);
+        alert('Client saved successfully!');
+        closeClientModal();
+    } catch (error) {
+        console.error('Error saving client:', error);
+        alert('Error saving client. Please try again.');
+    }
+}
+
 // Company Settings functions
 async function loadCompanySettings() {
     try {
