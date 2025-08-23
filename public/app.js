@@ -89,6 +89,7 @@ function showSection(sectionId) {
     } else if (sectionId === 'create-invoice') {
         resetInvoiceForm();
         loadClientOptions();
+        loadCompanySettings(); // Ensure company settings are loaded
         updateInvoiceHeader();
     } else if (sectionId === 'company-settings') {
         loadCompanySettings();
@@ -356,9 +357,30 @@ function closeInvoiceModal() {
 // Company Settings functions
 async function loadCompanySettings() {
     try {
-        const response = await fetch('/api/company');
-        companySettings = await response.json();
+        // Try to load from localStorage first
+        const savedSettings = localStorage.getItem('companySettings');
+        if (savedSettings) {
+            companySettings = JSON.parse(savedSettings);
+        } else {
+            // Set default values if no saved settings
+            companySettings = {
+                name: 'YOUR ENGINEERING COMPANY',
+                tagline: 'Professional Engineering Services',
+                address: 'Your Company Address',
+                phone: 'Your Phone Number',
+                email: 'your@email.com',
+                gstin: 'Your GSTIN Number',
+                state: 'Your State Code',
+                bankName: 'Your Bank Name',
+                accountNo: 'Your Account Number',
+                ifscCode: 'Your IFSC Code',
+                accountHolder: 'Your Account Holder Name',
+                logo: null
+            };
+        }
         populateCompanyForm();
+        updateSidebarTitle();
+        updateInvoiceHeader();
     } catch (error) {
         console.error('Error loading company settings:', error);
     }
@@ -400,18 +422,13 @@ async function handleCompanySubmit(e) {
     };
     
     try {
-        const response = await fetch('/api/company', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
+        // Save to localStorage instead of API
+        companySettings = formData;
+        localStorage.setItem('companySettings', JSON.stringify(companySettings));
         
-        if (response.ok) {
-            companySettings = await response.json();
-            alert('Company settings saved successfully!');
-            updateSidebarTitle();
-            updateInvoiceHeader();
-        }
+        alert('Company settings saved successfully!');
+        updateSidebarTitle();
+        updateInvoiceHeader();
     } catch (error) {
         console.error('Error saving company settings:', error);
         alert('Error saving company settings. Please try again.');
