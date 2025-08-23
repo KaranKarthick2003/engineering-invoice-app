@@ -10,26 +10,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    // Set up event listeners
-    setupEventListeners();
+    console.log('Initializing app...');
     
-    // Load initial data
-    loadDashboard();
-    loadCompanySettings();
-    
-    // Initialize mobile menu functionality
-    closeMobileMenuOnNavClick();
-    
-    // Show dashboard by default
-    showSection('dashboard');
+    try {
+        // Set up event listeners
+        setupEventListeners();
+        
+        // Load initial data
+        loadDashboard();
+        loadCompanySettings();
+        
+        // Initialize mobile menu functionality
+        closeMobileMenuOnNavClick();
+        
+        // Show dashboard by default
+        showSection('dashboard');
+        
+        console.log('App initialized successfully');
+    } catch (error) {
+        console.error('Error initializing app:', error);
+    }
 }
 
 function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
     // Navigation event listeners
-    document.querySelectorAll('.nav-link').forEach(link => {
+    const navLinks = document.querySelectorAll('.nav-link');
+    console.log('Found nav links:', navLinks.length);
+    
+    navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const section = this.getAttribute('data-section');
+            console.log('Navigation clicked:', section);
             showSection(section);
         });
     });
@@ -63,26 +77,41 @@ function setupEventListeners() {
 }
 
 function showSection(sectionId) {
-    // Hide all sections
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
+    console.log('Showing section:', sectionId);
     
-    // Remove active class from all nav links
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-    
-    // Show selected section
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.classList.add('active');
-    }
-    
-    // Add active class to corresponding nav link
-    const navLink = document.querySelector(`[data-section="${sectionId}"]`);
-    if (navLink) {
-        navLink.classList.add('active');
+    try {
+        // Hide all sections
+        const allSections = document.querySelectorAll('.content-section');
+        console.log('Found sections:', allSections.length);
+        
+        allSections.forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Remove active class from all nav links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Show selected section
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+            console.log('Section activated:', sectionId);
+        } else {
+            console.error('Section not found:', sectionId);
+        }
+        
+        // Add active class to corresponding nav link
+        const navLink = document.querySelector(`[data-section="${sectionId}"]`);
+        if (navLink) {
+            navLink.classList.add('active');
+            console.log('Nav link activated for:', sectionId);
+        } else {
+            console.error('Nav link not found for:', sectionId);
+        }
+    } catch (error) {
+        console.error('Error in showSection:', error);
     }
     
     // Load section-specific data
