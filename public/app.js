@@ -31,12 +31,25 @@ function setupEventListeners() {
         });
     });
     
-    // Form event listeners
+    // Invoice form event listener
+    const invoiceForm = document.getElementById('invoice-form');
+    if (invoiceForm) {
+        invoiceForm.addEventListener('submit', handleInvoiceSubmit);
+    }
+    
+    // Client form event listener
+    const clientForm = document.getElementById('client-form');
+    if (clientForm) {
+        clientForm.addEventListener('submit', handleClientSubmit);
+    }
+    
+    // Company settings form event listener
     const companyForm = document.getElementById('company-form');
     if (companyForm) {
         companyForm.addEventListener('submit', handleCompanySubmit);
     }
     
+    // Logo upload event listener
     const logoUpload = document.getElementById('logo-upload');
     if (logoUpload) {
         logoUpload.addEventListener('change', handleLogoUpload);
@@ -448,6 +461,34 @@ function removeLogo() {
     companySettings.logo = null;
     document.getElementById('logo-upload').value = '';
     updateLogoPreview();
+}
+
+function resetCompanyForm() {
+    // Reset form to default values
+    document.getElementById('company-form').reset();
+    
+    // Reset company settings to defaults
+    companySettings = {
+        name: 'YOUR ENGINEERING COMPANY',
+        tagline: 'Professional Engineering Services',
+        address: 'Your Company Address',
+        phone: 'Your Phone Number',
+        email: 'your@email.com',
+        gstin: 'Your GSTIN Number',
+        state: 'Your State Code',
+        bankName: 'Your Bank Name',
+        accountNo: 'Your Account Number',
+        ifscCode: 'Your IFSC Code',
+        accountHolder: 'Your Account Holder Name',
+        logo: null
+    };
+    
+    // Repopulate form with defaults
+    populateCompanyForm();
+    
+    // Update UI elements
+    updateSidebarTitle();
+    updateInvoiceHeader();
 }
 
 function updateSidebarTitle() {
