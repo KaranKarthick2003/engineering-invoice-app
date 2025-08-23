@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Invoice Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-tools"></i>
+                <h2>Invoice Manager</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="#" class="nav-link" data-section="invoices"><i class="fas fa-file-invoice"></i> Invoices</a></li>
+                <li><a href="#" class="nav-link" data-section="clients"><i class="fas fa-users"></i> Customers</a></li>
+                <li><a href="#" class="nav-link" data-section="create-invoice"><i class="fas fa-plus"></i> New Invoice</a></li>
+                <li><a href="#" class="nav-link" data-section="company-settings"><i class="fas fa-cog"></i> Company Settings</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <p>Overview of your engineering invoice business</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-invoices">0</h3>
+                            <p>Total Invoices</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-revenue">$0</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="pending-amount">$0</h3>
+                            <p>Pending Amount</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="overdue-invoices">0</h3>
+                            <p>Overdue Invoices</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-invoices">
+                    <h2>Recent Invoices</h2>
+                    <div id="recent-invoices-list" class="invoice-list"></div>
+                </div>
+            </section>
+
+            <!-- Invoices Section -->
+            <section id="invoices" class="content-section">
+                <div class="section-header">
+                    <h1>Invoices</h1>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="invoice-search" placeholder="Search invoices...">
+                        </div>
+                        <select id="status-filter">
+                            <option value="">All Status</option>
+                            <option value="draft">Draft</option>
+                            <option value="sent">Sent</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="showSection('create-invoice')">
+                            <i class="fas fa-plus"></i> New Invoice
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="invoices-list" class="invoice-list"></div>
+            </section>
+
+            <!-- Customers Section -->
+            <section id="clients" class="content-section">
+                <div class="section-header">
+                    <h2>Customers</h2>
+                    <button class="btn btn-primary" onclick="showClientModal()">Add Customer</button>
+                </div>
+                
+                <div class="clients-grid" id="clients-list">
+                    <!-- Customers will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Create Invoice Section -->
+            <section id="create-invoice" class="content-section">
+                <div class="section-header">
+                    <h1 id="invoice-form-title">Create New Invoice</h1>
+                    <button class="btn btn-secondary" onclick="showSection('invoices')">
+                        <i class="fas fa-arrow-left"></i> Back to Invoices
+                    </button>
+                </div>
+
+                <!-- Company Header Preview -->
+                <div id="invoice-company-header" class="invoice-company-header">
+                    <div class="company-section">
+                        <div id="invoice-logo-display" class="invoice-logo-container"></div>
+                        <div class="company-info">
+                            <h2 id="header-company-name">Your Company Name</h2>
+                            <p id="header-company-tagline"></p>
+                            <p id="header-company-address"></p>
+                            <p id="header-company-contact"></p>
+                            <p id="header-company-gstin"></p>
+                        </div>
+                    </div>
+                    <div class="invoice-meta-header">
+                        <h2>ESTIMATE</h2>
+                        <div class="estimate-details">
+                            <p><strong>Estimate No:</strong> <span id="preview-invoice-number">--</span></p>
+                            <p><strong>Date:</strong> <span id="preview-date"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="invoice-form" class="invoice-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="client-select">Select Customer:</label>
+                            <select id="client-select" required>
+                                <option value="">Choose a customer...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="project-description">Material/Item:</label>
+                            <input type="text" id="invoice-description" placeholder="e.g., Structural Engineering Design" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tax-rate">Tax Rate (%)</label>
+                            <input type="number" id="tax-rate" value="10" min="0" max="100" step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="payment-mode">Payment Mode</label>
+                            <select id="payment-mode" onchange="togglePaymentDetails()">
+                                <option value="cash">Cash Payment</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="upi">UPI/Digital Payment</option>
+                                <option value="card">Credit/Debit Card</option>
+                            </select>
+                        </div>
+
+                        <div id="customer-bank-details" class="form-group" style="display: none;">
+                            <label for="customer-bank-info">Customer Bank Details</label>
+                            <textarea id="customer-bank-info" placeholder="Bank Name: &#10;Account Number: &#10;IFSC Code: &#10;Account Holder: "></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="invoice-notes">Notes</label>
+                            <textarea id="invoice-notes" placeholder="Additional notes or terms"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="items-section">
+                        <div class="items-header">
+                            <h3>Invoice Items</h3>
+                            <button type="button" class="btn btn-secondary" onclick="addInvoiceItem()">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+                        
+                        <div id="invoice-items" class="items-container">
+                            <!-- Items will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="invoice-totals">
+                        <div class="totals-row">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹0.00</span>
+                        </div>
+                        <div class="totals-row">
+                            <span>Tax:</span>
+                            <span id="tax-amount">₹0.00</span>
+                        </div>
+                        <div class="totals-row total">
+                            <span>Total:</span>
+                            <span id="total-amount">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-info-section">
+                        <h3>Payment Information</h3>
+                        <div id="payment-details">
+                            <p><strong>Payment Mode:</strong> <span id="display-payment-mode">Cash Payment</span></p>
+                            <div id="display-customer-bank" style="display: none;">
+                                <p><strong>Customer Bank Details:</strong></p>
+                                <div id="display-bank-info"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="resetInvoiceForm()">Reset</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Invoice
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Company Settings Section -->
+            <section id="company-settings" class="content-section">
+                <div class="section-header">
+                    <h1>Company Settings</h1>
+                    <p>Customize your company information and branding</p>
+                </div>
+
+                <form id="company-form" class="company-form">
+                    <div class="clients-grid" id="clients-list">
+                    <!-- Customers will be loaded here -->
+                </div>
+                <div class="settings-card">
+                            <h3><i class="fas fa-building"></i> Company Information</h3>
+                            
+                            <div class="form-group">
+                                <label for="company-name">Company Name *</label>
+                                <input type="text" id="company-name" placeholder="Your Engineering Company" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="company-tagline">Tagline</label>
+                                <input type="text" id="company-tagline" placeholder="Professional Engineering Solutions">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="company-address">Company Address *</label>
+                                <textarea id="company-address" rows="3" placeholder="Your Company Address&#10;City, State - PIN Code" required></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="company-phone">Phone Number *</label>
+                                    <input type="tel" id="company-phone" placeholder="+91-XXXXXXXXXX" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="company-email">Email Address *</label>
+                                    <input type="email" id="company-email" placeholder="contact@yourcompany.com" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logo Upload -->
+                        <div class="settings-card">
+                            <h3><i class="fas fa-image"></i> Company Logo</h3>
+                            
+                            <div class="logo-upload-section">
+                                <div class="logo-preview" id="logo-preview">
+                                    <i class="fas fa-image"></i>
+                                    <p>No logo uploaded</p>
+                                </div>
+                                
+                                <div class="logo-upload-controls">
+                                    <input type="file" id="logo-upload" accept="image/*" style="display: none;">
+                                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('logo-upload').click()">
+                                        <i class="fas fa-upload"></i> Upload Logo
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="remove-logo" onclick="removeLogo()" style="display: none;">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                                <p class="help-text">Recommended: 200x80px, PNG/JPG format</p>
+                            </div>
+                        </div>
+
+                        <!-- Tax Information -->
+                        <div class="settings-card">
+                            <h3><i class="fas fa-receipt"></i> Tax Information</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="company-gstin">GSTIN Number</label>
+                                    <input type="text" id="company-gstin" placeholder="29ABCDE1234F1Z5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="company-state">State Code</label>
+                                    <input type="text" id="company-state" placeholder="29-Karnataka">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bank Details -->
+                        <div class="settings-card">
+                            <h3><i class="fas fa-university"></i> Bank Details</h3>
+                            
+                            <div class="form-group">
+                                <label for="bank-name">Bank Name</label>
+                                <input type="text" id="bank-name" placeholder="Your Bank Name">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="account-number">Account Number</label>
+                                    <input type="text" id="account-number" placeholder="1234567890">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ifsc-code">IFSC Code</label>
+                                    <input type="text" id="ifsc-code" placeholder="ABCD0001234">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="account-holder">Account Holder Name</label>
+                                <input type="text" id="account-holder" placeholder="Your Company Name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="loadCompanySettings()">Reset</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Company Settings
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Client Modal -->
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Client</h2>
+                <span class="close" onclick="closeClientModal()">&times;</span>
+            </div>
+            <form id="client-form">
+                <div class="form-group">
+                    <label for="client-name">Company Name *</label>
+                    <input type="text" id="client-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="client-email">Email *</label>
+                    <input type="email" id="client-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="client-phone">Phone</label>
+                    <input type="tel" id="client-phone">
+                </div>
+                <div class="form-group">
+                    <label for="client-address">Address</label>
+                    <textarea id="client-address"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invoice View Modal -->
+    <div id="invoice-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Invoice Details</h2>
+                <span class="close" onclick="closeInvoiceModal()">&times;</span>
+            </div>
+            <div id="invoice-details" class="invoice-details">
+                {{ ... }}
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
