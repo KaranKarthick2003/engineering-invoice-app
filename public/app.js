@@ -376,6 +376,263 @@ async function handleInvoiceSubmit(e) {
     }
 }
 
+function printInvoice() {
+    // Create a printable invoice layout
+    const printWindow = window.open('', '_blank');
+    const invoiceHTML = generatePrintableInvoice();
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Invoice - Print</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    color: #333; 
+                }
+                .invoice-container { 
+                    max-width: 800px; 
+                    margin: 0 auto; 
+                    background: white; 
+                }
+                .invoice-header { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: flex-start; 
+                    margin-bottom: 30px; 
+                    border-bottom: 2px solid #667eea; 
+                    padding-bottom: 20px; 
+                }
+                .company-info h1 { 
+                    color: #667eea; 
+                    margin: 0; 
+                    font-size: 28px; 
+                }
+                .company-info p { 
+                    margin: 5px 0; 
+                    color: #666; 
+                }
+                .invoice-details { 
+                    text-align: right; 
+                }
+                .invoice-details h2 { 
+                    color: #667eea; 
+                    margin: 0; 
+                    font-size: 24px; 
+                }
+                .client-info { 
+                    margin: 20px 0; 
+                }
+                .client-info h3 { 
+                    color: #333; 
+                    margin-bottom: 10px; 
+                }
+                .items-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 20px 0; 
+                }
+                .items-table th, .items-table td { 
+                    border: 1px solid #ddd; 
+                    padding: 12px; 
+                    text-align: left; 
+                }
+                .items-table th { 
+                    background-color: #667eea; 
+                    color: white; 
+                }
+                .items-table tr:nth-child(even) { 
+                    background-color: #f9f9f9; 
+                }
+                .totals-section { 
+                    margin-top: 20px; 
+                    text-align: right; 
+                }
+                .totals-row { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    margin: 5px 0; 
+                    padding: 5px 0; 
+                }
+                .total-final { 
+                    font-weight: bold; 
+                    font-size: 18px; 
+                    border-top: 2px solid #667eea; 
+                    padding-top: 10px; 
+                }
+                .payment-info { 
+                    margin-top: 30px; 
+                    padding: 15px; 
+                    background-color: #f8f9ff; 
+                    border-left: 4px solid #667eea; 
+                }
+                .logo { 
+                    max-width: 150px; 
+                    max-height: 80px; 
+                }
+                @media print {
+                    body { margin: 0; padding: 15px; }
+                    .invoice-container { box-shadow: none; }
+                }
+            </style>
+        </head>
+        <body>
+            ${invoiceHTML}
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Wait for content to load, then print
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
+}
+
+function generatePrintableInvoice() {
+    // Get current form data
+    const clientSelect = document.getElementById('client-select');
+    const selectedClient = clientSelect.options[clientSelect.selectedIndex]?.text || 'No client selected';
+    const description = document.getElementById('invoice-description').value || 'No description';
+    const taxRate = document.getElementById('tax-rate').value || '0';
+    const paymentMode = document.getElementById('payment-mode').value || 'cash';
+    const notes = document.getElementById('invoice-notes').value || '';
+    
+    // Get payment mode display text
+    const paymentModeText = document.getElementById('display-payment-mode').textContent;
+    
+    // Get customer bank details if visible
+    const customerBankDiv = document.getElementById('display-customer-bank');
+    const customerBankInfo = customerBankDiv.style.display !== 'none' ? 
+        document.getElementById('display-bank-info').innerHTML : '';
+    
+    // Get totals
+    const subtotal = document.getElementById('subtotal').textContent || '₹0.00';
+    const taxAmount = document.getElementById('tax-amount').textContent || '₹0.00';
+    const totalAmount = document.getElementById('total-amount').textContent || '₹0.00';
+    
+    // Get company logo
+    const logoContainer = document.getElementById('invoice-logo-display');
+    const logoHTML = logoContainer.innerHTML.includes('<img') ? 
+        logoContainer.innerHTML : '<div style="color: #ccc; font-size: 14px;">No Logo</div>';
+    
+    // Generate invoice items table
+    const itemsContainer = document.getElementById('invoice-items');
+    let itemsHTML = '';
+    
+    if (itemsContainer && itemsContainer.children.length > 0) {
+        itemsHTML = `
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>HSN/SAC</th>
+                        <th>Qty</th>
+                        <th>Sq/M</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        Array.from(itemsContainer.children).forEach(item => {
+            const desc = item.querySelector('.item-description')?.value || '';
+            const hsn = item.querySelector('.item-hsn')?.value || '';
+            const qty = item.querySelector('.item-quantity')?.value || '0';
+            const sqm = item.querySelector('.item-sqm')?.value || '0';
+            const rate = item.querySelector('.item-rate')?.value || '0';
+            const amount = item.querySelector('.item-amount')?.textContent || '₹0.00';
+            
+            itemsHTML += `
+                <tr>
+                    <td>${desc}</td>
+                    <td>${hsn}</td>
+                    <td>${qty}</td>
+                    <td>${sqm}</td>
+                    <td>₹${rate}</td>
+                    <td>${amount}</td>
+                </tr>
+            `;
+        });
+        
+        itemsHTML += '</tbody></table>';
+    } else {
+        itemsHTML = '<p style="color: #666; font-style: italic;">No items added to this invoice.</p>';
+    }
+    
+    return `
+        <div class="invoice-container">
+            <div class="invoice-header">
+                <div class="company-info">
+                    <div class="logo">${logoHTML}</div>
+                    <h1>${companySettings.name || 'Your Company Name'}</h1>
+                    <p>${companySettings.tagline || ''}</p>
+                    <p>${companySettings.address || 'Your Address'}</p>
+                    <p>Phone: ${companySettings.phone || 'Your Phone'}</p>
+                    <p>Email: ${companySettings.email || 'your@email.com'}</p>
+                    <p>GSTIN: ${companySettings.gstin || 'Your GSTIN'}</p>
+                </div>
+                <div class="invoice-details">
+                    <h2>INVOICE</h2>
+                    <p><strong>Invoice #:</strong> INV-${Date.now().toString().slice(-6)}</p>
+                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                </div>
+            </div>
+            
+            <div class="client-info">
+                <h3>Bill To:</h3>
+                <p><strong>${selectedClient}</strong></p>
+            </div>
+            
+            <div class="invoice-content">
+                <h3>Project Description:</h3>
+                <p>${description}</p>
+                
+                <h3>Invoice Items:</h3>
+                ${itemsHTML}
+                
+                <div class="totals-section">
+                    <div class="totals-row">
+                        <span>Subtotal:</span>
+                        <span>${subtotal}</span>
+                    </div>
+                    <div class="totals-row">
+                        <span>Tax (${taxRate}%):</span>
+                        <span>${taxAmount}</span>
+                    </div>
+                    <div class="totals-row total-final">
+                        <span>Total Amount:</span>
+                        <span>${totalAmount}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="payment-info">
+                <h3>Payment Information</h3>
+                <p><strong>Payment Mode:</strong> ${paymentModeText}</p>
+                ${customerBankInfo ? `<div><strong>Customer Bank Details:</strong><br>${customerBankInfo}</div>` : ''}
+                ${companySettings.bankName ? `
+                    <div style="margin-top: 15px;">
+                        <strong>Our Bank Details:</strong><br>
+                        Bank: ${companySettings.bankName}<br>
+                        Account: ${companySettings.accountNo}<br>
+                        IFSC: ${companySettings.ifscCode}<br>
+                        Account Holder: ${companySettings.accountHolder}
+                    </div>
+                ` : ''}
+                ${notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${notes}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
 async function handleClientSubmit(e) {
     e.preventDefault();
     console.log('Client form submitted');
