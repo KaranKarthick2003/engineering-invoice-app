@@ -46,7 +46,10 @@ function setupEventListeners() {
     // Company settings form event listener
     const companyForm = document.getElementById('company-form');
     if (companyForm) {
+        console.log('Company form found, adding event listener');
         companyForm.addEventListener('submit', handleCompanySubmit);
+    } else {
+        console.log('Company form NOT found');
     }
     
     // Logo upload event listener
@@ -404,6 +407,7 @@ function populateCompanyForm() {
 }
 
 async function handleCompanySubmit(e) {
+    console.log('Company form submit triggered');
     e.preventDefault();
     
     const formData = {
@@ -421,11 +425,14 @@ async function handleCompanySubmit(e) {
         logo: companySettings.logo // Keep existing logo
     };
     
+    console.log('Form data:', formData);
+    
     try {
         // Save to localStorage instead of API
         companySettings = formData;
         localStorage.setItem('companySettings', JSON.stringify(companySettings));
         
+        console.log('Settings saved to localStorage');
         alert('Company settings saved successfully!');
         updateSidebarTitle();
         updateInvoiceHeader();
