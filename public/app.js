@@ -129,6 +129,9 @@ function showSection(sectionId) {
     } else if (sectionId === 'company-settings') {
         loadCompanySettings();
     }
+    
+    // Hide/show company settings buttons based on current section
+    hideCompanySettingsButtons(sectionId);
 }
 
 // Dashboard functions
@@ -1187,32 +1190,87 @@ function closeInvoiceModal() {
 
 // Mobile menu functions
 function toggleMobileMenu() {
-    const sidebar = document.querySelector('.sidebar');
+    const sidebar = document.getElementById('sidebar');
     const menuToggle = document.querySelector('.mobile-menu-toggle i');
+    const overlay = document.getElementById('mobile-overlay');
+    const body = document.body;
     
-    sidebar.classList.toggle('mobile-open');
+    console.log('Toggling mobile menu...');
     
-    // Toggle icon between hamburger and close
     if (sidebar.classList.contains('mobile-open')) {
-        menuToggle.className = 'fas fa-times';
-    } else {
+        // Close menu
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
         menuToggle.className = 'fas fa-bars';
+        body.style.overflow = 'auto';
+        console.log('Mobile menu closed');
+    } else {
+        // Open menu
+        sidebar.classList.add('mobile-open');
+        overlay.classList.add('active');
+        menuToggle.className = 'fas fa-times';
+        body.style.overflow = 'hidden';
+        console.log('Mobile menu opened');
     }
 }
 
 function closeMobileMenuOnNavClick() {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function() {
-            const sidebar = document.querySelector('.sidebar');
+            const sidebar = document.getElementById('sidebar');
             const menuToggle = document.querySelector('.mobile-menu-toggle i');
+            const overlay = document.getElementById('mobile-overlay');
+            const body = document.body;
             
             // Close mobile menu when nav link is clicked
             if (sidebar.classList.contains('mobile-open')) {
                 sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
                 menuToggle.className = 'fas fa-bars';
+                body.style.overflow = 'auto';
+                console.log('Mobile menu closed via navigation');
             }
         });
     });
+}
+
+// Function to hide company settings buttons on non-company-settings sections
+function hideCompanySettingsButtons(currentSection) {
+    // Find company settings buttons more specifically
+    const resetButton = document.querySelector('button[onclick="resetCompanyForm()"]');
+    const saveButtons = document.querySelectorAll('button[type="submit"]');
+    let companySaveButton = null;
+    
+    // Find the specific "Save Company Settings" button
+    saveButtons.forEach(btn => {
+        if (btn.textContent.includes('Save Company Settings')) {
+            companySaveButton = btn;
+        }
+    });
+    
+    console.log('Hiding/showing company buttons for section:', currentSection);
+    
+    if (currentSection === 'company-settings') {
+        // Show buttons on company settings page
+        if (resetButton) {
+            resetButton.style.display = 'inline-block';
+            console.log('Showing reset button');
+        }
+        if (companySaveButton) {
+            companySaveButton.style.display = 'inline-block';
+            console.log('Showing save button');
+        }
+    } else {
+        // Hide buttons on all other pages
+        if (resetButton) {
+            resetButton.style.display = 'none';
+            console.log('Hiding reset button');
+        }
+        if (companySaveButton) {
+            companySaveButton.style.display = 'none';
+            console.log('Hiding save button');
+        }
+    }
 }
 
 // Close modals when clicking outside

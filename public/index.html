@@ -9,16 +9,24 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <div class="mobile-brand">
+                <i class="fas fa-tools"></i>
+                <h2>Invoice Manager</h2>
+            </div>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
         <!-- Sidebar Navigation -->
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-brand">
                     <i class="fas fa-tools"></i>
                     <h2>Invoice Manager</h2>
                 </div>
-                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
-                    <i class="fas fa-bars"></i>
-                </button>
             </div>
             <ul class="nav-menu">
                 <li><a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
@@ -28,6 +36,9 @@
                 <li><a href="#" class="nav-link" data-section="company-settings"><i class="fas fa-cog"></i> Company Settings</a></li>
             </ul>
         </nav>
+
+        <!-- Mobile Overlay -->
+        <div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileMenu()"></div>
 
         <!-- Main Content -->
         <main class="main-content">
