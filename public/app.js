@@ -17,6 +17,9 @@ function initializeApp() {
     loadDashboard();
     loadCompanySettings();
     
+    // Initialize mobile menu functionality
+    closeMobileMenuOnNavClick();
+    
     // Show dashboard by default
     showSection('dashboard');
 }
@@ -357,6 +360,39 @@ function closeInvoiceModal() {
     document.getElementById('invoice-modal').style.display = 'none';
 }
 
+// Mobile menu toggle function
+function toggleMobileMenu() {
+    const navMenu = document.querySelector('.nav-menu');
+    const toggleButton = document.querySelector('.mobile-menu-toggle i');
+    
+    navMenu.classList.toggle('mobile-open');
+    
+    // Change icon based on menu state
+    if (navMenu.classList.contains('mobile-open')) {
+        toggleButton.className = 'fas fa-times';
+    } else {
+        toggleButton.className = 'fas fa-bars';
+    }
+}
+
+// Close mobile menu when a nav link is clicked
+function closeMobileMenuOnNavClick() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const navMenu = document.querySelector('.nav-menu');
+    const toggleButton = document.querySelector('.mobile-menu-toggle i');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                navMenu.classList.remove('mobile-open');
+                if (toggleButton) {
+                    toggleButton.className = 'fas fa-bars';
+                }
+            }
+        });
+    });
+}
+
 // Invoice functions
 async function handleInvoiceSubmit(e) {
     e.preventDefault();
@@ -377,7 +413,152 @@ async function handleInvoiceSubmit(e) {
 }
 
 function printInvoice() {
-    // Create a printable invoice layout
+    // Check if we're on mobile and use alternative approach
+    if (window.innerWidth <= 768) {
+        // On mobile, create a new page and use native sharing/printing
+        const invoiceHTML = generatePrintableInvoice();
+        const printWindow = window.open('', '_blank');
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Invoice - Print</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 10px; 
+                        padding: 0; 
+                        color: #333; 
+                        font-size: 14px;
+                    }
+                    .mobile-actions {
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        z-index: 1000;
+                        display: flex;
+                        gap: 10px;
+                    }
+                    .mobile-btn {
+                        background: #667eea;
+                        color: white;
+                        border: none;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        font-size: 14px;
+                        cursor: pointer;
+                    }
+                    .invoice-container { 
+                        max-width: 100%; 
+                        margin: 50px 0 0 0; 
+                        background: white; 
+                    }
+                    .invoice-header { 
+                        display: block;
+                        margin-bottom: 20px; 
+                        border-bottom: 2px solid #667eea; 
+                        padding-bottom: 15px; 
+                    }
+                    .company-info h1 { 
+                        color: #667eea; 
+                        margin: 0 0 10px 0; 
+                        font-size: 24px; 
+                    }
+                    .company-info p { 
+                        margin: 3px 0; 
+                        color: #666; 
+                        font-size: 13px;
+                    }
+                    .invoice-details { 
+                        margin-top: 15px;
+                        text-align: right; 
+                    }
+                    .invoice-details h2 { 
+                        color: #667eea; 
+                        margin: 0; 
+                        font-size: 20px; 
+                    }
+                    .client-info { 
+                        margin: 15px 0; 
+                    }
+                    .client-info h3 { 
+                        color: #333; 
+                        margin-bottom: 8px; 
+                        font-size: 16px;
+                    }
+                    .items-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin: 15px 0; 
+                        font-size: 12px;
+                    }
+                    .items-table th, .items-table td { 
+                        border: 1px solid #ddd; 
+                        padding: 8px 4px; 
+                        text-align: left; 
+                    }
+                    .items-table th { 
+                        background-color: #667eea; 
+                        color: white; 
+                        font-size: 11px;
+                    }
+                    .items-table tr:nth-child(even) { 
+                        background-color: #f9f9f9; 
+                    }
+                    .totals-section { 
+                        margin-top: 15px; 
+                        text-align: right; 
+                    }
+                    .totals-row { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin: 3px 0; 
+                        padding: 3px 0; 
+                        font-size: 14px;
+                    }
+                    .total-final { 
+                        font-weight: bold; 
+                        font-size: 16px; 
+                        border-top: 2px solid #667eea; 
+                        padding-top: 8px; 
+                    }
+                    .payment-info { 
+                        margin-top: 20px; 
+                        padding: 10px; 
+                        background-color: #f8f9ff; 
+                        border-left: 4px solid #667eea; 
+                        font-size: 13px;
+                    }
+                    .logo { 
+                        max-width: 120px; 
+                        max-height: 60px; 
+                    }
+                    @media print {
+                        .mobile-actions { display: none; }
+                        body { margin: 0; padding: 10px; font-size: 12px; }
+                        .invoice-container { margin: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="mobile-actions">
+                    <button class="mobile-btn" onclick="window.print()">Print</button>
+                    <button class="mobile-btn" onclick="window.close()">Close</button>
+                </div>
+                ${invoiceHTML}
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        return;
+    }
+    
+    // Desktop version
     const printWindow = window.open('', '_blank');
     const invoiceHTML = generatePrintableInvoice();
     
