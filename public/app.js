@@ -103,36 +103,121 @@ function showSection(sectionId) {
 }
 
 // Dashboard functions
-async function loadDashboard() {
+function loadDashboard() {
+    // Load dashboard with mock data since we don't have backend API
     try {
-        const response = await fetch('/api/dashboard');
-        const stats = await response.json();
-        
-        document.getElementById('total-invoices').textContent = stats.totalInvoices;
-        document.getElementById('total-revenue').textContent = `$${stats.totalRevenue.toFixed(2)}`;
-        document.getElementById('pending-amount').textContent = `$${stats.pendingAmount.toFixed(2)}`;
-        document.getElementById('overdue-invoices').textContent = stats.overdueInvoices;
+        document.getElementById('total-invoices').textContent = invoices.length || 0;
+        document.getElementById('total-revenue').textContent = `₹${calculateTotalRevenue().toFixed(2)}`;
+        document.getElementById('pending-amount').textContent = `₹${calculatePendingAmount().toFixed(2)}`;
+        document.getElementById('overdue-invoices').textContent = calculateOverdueInvoices();
         
         // Load recent invoices
-        await loadInvoices();
         const recentInvoices = invoices.slice(0, 5);
         displayRecentInvoices(recentInvoices);
     } catch (error) {
         console.error('Error loading dashboard:', error);
+        // Set default values if elements don't exist
+        const totalInvoicesEl = document.getElementById('total-invoices');
+        const totalRevenueEl = document.getElementById('total-revenue');
+        const pendingAmountEl = document.getElementById('pending-amount');
+        const overdueInvoicesEl = document.getElementById('overdue-invoices');
+        
+        if (totalInvoicesEl) totalInvoicesEl.textContent = '0';
+        if (totalRevenueEl) totalRevenueEl.textContent = '₹0.00';
+        if (pendingAmountEl) pendingAmountEl.textContent = '₹0.00';
+        if (overdueInvoicesEl) overdueInvoicesEl.textContent = '0';
     }
 }
 
-async function loadInvoices() {
-    // Placeholder for invoice loading
-    invoices = [];
+function loadInvoices() {
+    // Load invoices from localStorage or use empty array
+    const stored = localStorage.getItem('invoices');
+    invoices = stored ? JSON.parse(stored) : [];
+    return invoices;
+}
+
+function calculateTotalRevenue() {
+    return invoices.reduce((total, invoice) => total + (invoice.total || 0), 0);
+}
+
+function calculatePendingAmount() {
+    return invoices.filter(inv => inv.status === 'pending').reduce((total, invoice) => total + (invoice.total || 0), 0);
+}
+
+function calculateOverdueInvoices() {
+    return invoices.filter(inv => inv.status === 'overdue').length;
+}
+
+function loadCustomers() {
+    // Load customers from localStorage or use sample data
+    const stored = localStorage.getItem('customers');
+    customers = stored ? JSON.parse(stored) : [
+        {
+            id: 1,
+            name: "ABC Construction Ltd",
+            email: "contact@abcconstruction.com",
+            phone: "+91-9876543210",
+            address: "123 Industrial Area, Bangalore - 560001"
+        }
+    ];
+    displayCustomers();
+}
+
+function displayCustomers() {
+    const container = document.getElementById('clients-list');
+    if (!container) return;
+    
+    container.innerHTML = customers.map(customer => `
+        <div class="client-card">
+            <h3>${customer.name}</h3>
+            <p><i class="fas fa-envelope"></i> ${customer.email}</p>
+            <p><i class="fas fa-phone"></i> ${customer.phone}</p>
+            <p><i class="fas fa-map-marker-alt"></i> ${customer.address}</p>
+        </div>
+    `).join('');
 }
 
 function resetInvoiceForm() {
-    // Placeholder for form reset
+    const form = document.getElementById('invoice-form');
+    if (form) {
+        form.reset();
+        // Reset items table
+        const itemsBody = document.getElementById('invoice-items');
+        if (itemsBody) {
+            itemsBody.innerHTML = '';
+        }
+        updateInvoiceHeader();
+    }
 }
 
 function displayRecentInvoices(invoices) {
-    // Placeholder for recent invoices display
+    const container = document.getElementById('recent-invoices');
+    if (!container) return;
+    
+    if (invoices.length === 0) {
+        container.innerHTML = '<p>No recent invoices found.</p>';
+        return;
+    }
+    
+    container.innerHTML = invoices.map(invoice => `
+        <div class="invoice-item">
+            <div class="invoice-info">
+                <h4>Invoice #${invoice.number}</h4>
+                <p>${invoice.clientName}</p>
+                <span class="invoice-status ${invoice.status}">${invoice.status}</span>
+            </div>
+            <div class="invoice-amount">₹${invoice.total.toFixed(2)}</div>
+        </div>
+    `).join('');
+}
+
+function loadClientOptions() {
+    const select = document.getElementById('client-select');
+    if (!select) return;
+    
+    loadCustomers();
+    select.innerHTML = '<option value="">Select Customer</option>' + 
+        customers.map(customer => `<option value="${customer.id}">${customer.name}</option>`).join('');
 }
 
 function togglePaymentDetails() {
@@ -1028,6 +1113,77 @@ function updateInvoiceHeader() {
     // Update preview date and invoice number
     document.getElementById('preview-date').textContent = new Date().toLocaleDateString();
     document.getElementById('preview-invoice-number').textContent = `27${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+}
+
+// Form submission handlers
+function handleInvoiceSubmit(e) {
+    e.preventDefault();
+    alert('Invoice saved successfully!');
+    // Add invoice saving logic here
+}
+
+function handleClientSubmit(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const newClient = {
+        id: Date.now(),
+        name: formData.get('client-name'),
+        email: formData.get('client-email'),
+        phone: formData.get('client-phone'),
+        address: formData.get('client-address')
+    };
+    
+    customers.push(newClient);
+    localStorage.setItem('customers', JSON.stringify(customers));
+    
+    closeClientModal();
+    loadClientOptions();
+    displayCustomers();
+    alert('Customer added successfully!');
+}
+
+// Modal functions
+function showClientModal() {
+    document.getElementById('client-modal').style.display = 'block';
+}
+
+function closeClientModal() {
+    document.getElementById('client-modal').style.display = 'none';
+}
+
+function closeInvoiceModal() {
+    const modal = document.getElementById('invoice-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Mobile menu functions
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.querySelector('.mobile-menu-toggle i');
+    
+    sidebar.classList.toggle('mobile-open');
+    
+    // Toggle icon between hamburger and close
+    if (sidebar.classList.contains('mobile-open')) {
+        menuToggle.className = 'fas fa-times';
+    } else {
+        menuToggle.className = 'fas fa-bars';
+    }
+}
+
+function closeMobileMenuOnNavClick() {
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const menuToggle = document.querySelector('.mobile-menu-toggle i');
+            
+            // Close mobile menu when nav link is clicked
+            if (sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+                menuToggle.className = 'fas fa-bars';
+            }
+        });
+    });
 }
 
 // Close modals when clicking outside
