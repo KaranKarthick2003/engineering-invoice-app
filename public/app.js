@@ -75,6 +75,27 @@ function setupEventListeners() {
     if (logoUpload) {
         logoUpload.addEventListener('change', handleLogoUpload);
     }
+    
+    // Tax rate change listener
+    const taxRateInput = document.getElementById('tax-rate');
+    if (taxRateInput) {
+        taxRateInput.addEventListener('input', calculateInvoiceTotals);
+    }
+    
+    // Payment mode change listener
+    const paymentModeSelect = document.getElementById('payment-mode');
+    if (paymentModeSelect) {
+        paymentModeSelect.addEventListener('change', togglePaymentDetails);
+    }
+    
+    // Bank details change listeners
+    const bankInputs = ['customer-bank-name', 'customer-account-number', 'customer-ifsc-code', 'customer-account-holder'];
+    bankInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', updateBankDisplay);
+        }
+    });
 }
 
 function showSection(sectionId) {
@@ -947,6 +968,208 @@ function generatePrintableInvoice() {
                         <span>${totalAmount}</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    `;
+}
+
+// Invoice Item Functions
+function addInvoiceItem() {
+    const itemsContainer = document.getElementById('invoice-items');
+    if (!itemsContainer) return;
+    
+    const itemId = Date.now().toString();
+    const itemRow = document.createElement('div');
+    itemRow.className = 'invoice-item';
+    itemRow.id = `item-${itemId}`;
+    
+    itemRow.innerHTML = `
+        <div class="item-content">
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" class="item-description" placeholder="Item description" required>
+            </div>
+            <div class="form-group">
+                <label>HSN/SAC</label>
+                <input type="text" class="item-hsn" placeholder="HSN/SAC code">
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" class="item-quantity" value="1" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Sq/M</label>
+                <input type="number" class="item-sqm" value="0" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Rate (₹)</label>
+                <input type="number" class="item-rate" value="0" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Amount (₹)</label>
+                <span class="item-amount">₹0.00</span>
+            </div>
+            <div class="form-group">
+                <button type="button" class="remove-item" onclick="removeInvoiceItem('${itemId}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    itemsContainer.appendChild(itemRow);
+    
+    // Add event listeners for calculation
+    const quantityInput = itemRow.querySelector('.item-quantity');
+    const sqmInput = itemRow.querySelector('.item-sqm');
+    const rateInput = itemRow.querySelector('.item-rate');
+    
+    [quantityInput, sqmInput, rateInput].forEach(input => {
+        input.addEventListener('input', () => calculateItemAmount(itemId));
+    });
+    
+    // Calculate initial amount
+    calculateItemAmount(itemId);
+    calculateInvoiceTotals();
+}
+
+function removeInvoiceItem(itemId) {
+    const itemRow = document.getElementById(`item-${itemId}`);
+    if (itemRow) {
+        itemRow.remove();
+        calculateInvoiceTotals();
+    }
+}
+
+function calculateItemAmount(itemId) {
+    const itemRow = document.getElementById(`item-${itemId}`);
+    if (!itemRow) return;
+    
+    const quantity = parseFloat(itemRow.querySelector('.item-quantity').value) || 0;
+    const sqm = parseFloat(itemRow.querySelector('.item-sqm').value) || 0;
+    const rate = parseFloat(itemRow.querySelector('.item-rate').value) || 0;
+    
+    // Calculate amount based on quantity and rate, or sqm and rate
+    let amount = 0;
+    if (sqm > 0) {
+        amount = sqm * rate;
+    } else {
+        amount = quantity * rate;
+    }
+    
+    itemRow.querySelector('.item-amount').textContent = `₹${amount.toFixed(2)}`;
+}
+
+function calculateInvoiceTotals() {
+    const itemsContainer = document.getElementById('invoice-items');
+    if (!itemsContainer) return;
+    
+    let subtotal = 0;
+    const itemRows = itemsContainer.querySelectorAll('.invoice-item');
+    
+    itemRows.forEach(itemRow => {
+        const amountText = itemRow.querySelector('.item-amount').textContent;
+        const amount = parseFloat(amountText.replace('₹', '')) || 0;
+        subtotal += amount;
+    });
+    
+    const taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+    const taxAmount = subtotal * (taxRate / 100);
+    const total = subtotal + taxAmount;
+    
+    // Update totals display
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('tax-amount').textContent = `₹${taxAmount.toFixed(2)}`;
+    document.getElementById('total-amount').textContent = `₹${total.toFixed(2)}`;
+}
+
+function resetInvoiceForm() {
+    const form = document.getElementById('invoice-form');
+    if (form) {
+        form.reset();
+    }
+    
+    const itemsContainer = document.getElementById('invoice-items');
+    if (itemsContainer) {
+        itemsContainer.innerHTML = '';
+    }
+    
+    // Reset totals
+    document.getElementById('subtotal').textContent = '₹0.00';
+    document.getElementById('tax-amount').textContent = '₹0.00';
+    document.getElementById('total-amount').textContent = '₹0.00';
+    
+    // Reset payment mode display
+    document.getElementById('display-payment-mode').textContent = 'Cash Payment';
+    document.getElementById('display-customer-bank').style.display = 'none';
+    
+    // Update invoice header
+    updateInvoiceHeader();
+}
+
+function updateInvoiceHeader() {
+    // Update invoice number
+    const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+    document.getElementById('preview-invoice-number').textContent = invoiceNumber;
+    
+    // Update date
+    document.getElementById('preview-date').textContent = new Date().toLocaleDateString();
+    
+    // Update company information
+    if (companySettings.name) {
+        document.getElementById('header-company-name').textContent = companySettings.name;
+    }
+    if (companySettings.tagline) {
+        document.getElementById('header-company-tagline').textContent = companySettings.tagline;
+    }
+    if (companySettings.address) {
+        document.getElementById('header-company-address').textContent = companySettings.address;
+    }
+    if (companySettings.phone || companySettings.email) {
+        const contact = [];
+        if (companySettings.phone) contact.push(companySettings.phone);
+        if (companySettings.email) contact.push(companySettings.email);
+        document.getElementById('header-company-contact').textContent = contact.join(' | ');
+    }
+    if (companySettings.gstin) {
+        document.getElementById('header-company-gstin').textContent = `GSTIN: ${companySettings.gstin}`;
+    }
+}
+
+function togglePaymentDetails() {
+    const paymentMode = document.getElementById('payment-mode').value;
+    const bankDetailsSection = document.getElementById('customer-bank-details');
+    const displayPaymentMode = document.getElementById('display-payment-mode');
+    const displayCustomerBank = document.getElementById('display-customer-bank');
+    
+    if (paymentMode === 'bank') {
+        bankDetailsSection.style.display = 'block';
+        displayPaymentMode.textContent = 'Bank Transfer';
+        displayCustomerBank.style.display = 'block';
+        updateBankDisplay();
+    } else {
+        bankDetailsSection.style.display = 'none';
+        displayPaymentMode.textContent = paymentMode.charAt(0).toUpperCase() + paymentMode.slice(1) + ' Payment';
+        displayCustomerBank.style.display = 'none';
+    }
+}
+
+function updateBankDisplay() {
+    const bankName = document.getElementById('customer-bank-name').value;
+    const accountNumber = document.getElementById('customer-account-number').value;
+    const ifscCode = document.getElementById('customer-ifsc-code').value;
+    const accountHolder = document.getElementById('customer-account-holder').value;
+    
+    const displayBankInfo = document.getElementById('display-bank-info');
+    if (displayBankInfo) {
+        displayBankInfo.innerHTML = `
+            <p>Bank: ${bankName || 'N/A'}</p>
+            <p>Account: ${accountNumber || 'N/A'}</p>
+            <p>IFSC: ${ifscCode || 'N/A'}</p>
+            <p>Holder: ${accountHolder || 'N/A'}</p>
+        `;
+    }
+}
             </div>
             
             <div class="payment-info">
