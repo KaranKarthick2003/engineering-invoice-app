@@ -6,7 +6,17 @@ let companySettings = {};
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Starting app initialization...');
     initializeApp();
+});
+
+// Fallback initialization in case DOMContentLoaded doesn't fire
+window.addEventListener('load', function() {
+    console.log('Window Load event fired...');
+    if (!document.querySelector('.content-section.active')) {
+        console.log('No active section found, initializing app...');
+        initializeApp();
+    }
 });
 
 function initializeApp() {
@@ -40,7 +50,13 @@ function setupEventListeners() {
     const navLinks = document.querySelectorAll('.nav-link');
     console.log('Found nav links:', navLinks.length);
     
-    navLinks.forEach(link => {
+    if (navLinks.length === 0) {
+        console.error('No navigation links found!');
+        return;
+    }
+    
+    navLinks.forEach((link, index) => {
+        console.log(`Setting up nav link ${index}:`, link.getAttribute('data-section'));
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const section = this.getAttribute('data-section');
@@ -1460,18 +1476,6 @@ function handleInvoiceSubmit(e) {
     }
 }
 
-// Close modals when clicking outside
-window.onclick = function(event) {
-    const clientModal = document.getElementById('client-modal');
-    const invoiceModal = document.getElementById('invoice-modal');
-    if (event.target === clientModal) {
-        closeClientModal();
-    }
-    if (event.target === invoiceModal) {
-        closeInvoiceModal();
-    }
-}
-
 // Function to hide company settings buttons on non-company-settings sections
 function hideCompanySettingsButtons(currentSection) {
     // Find company settings buttons more specifically
@@ -1521,5 +1525,11 @@ window.onclick = function(event) {
     if (event.target === invoiceModal) {
         closeInvoiceModal();
     }
+}
+
+// Debug function to test navigation
+window.testNavigation = function(section) {
+    console.log('Testing navigation to:', section);
+    showSection(section);
 }
 
