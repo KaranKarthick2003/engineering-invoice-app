@@ -431,62 +431,6 @@
     </div>
 
     <script src="app.js"></script>
-    <script>
-        // Fallback navigation in case main app.js fails
-        window.addEventListener('load', function() {
-            console.log('Fallback navigation check...');
-            
-            // Check if main navigation is working
-            setTimeout(function() {
-                const navLinks = document.querySelectorAll('.nav-link');
-                if (navLinks.length === 0) {
-                    console.error('Navigation links not found - app.js may have failed to load');
-                    return;
-                }
-                
-                // Test if click handlers are attached
-                let handlersAttached = false;
-                navLinks.forEach(link => {
-                    const events = getEventListeners ? getEventListeners(link) : null;
-                    if (events && events.click && events.click.length > 0) {
-                        handlersAttached = true;
-                    }
-                });
-                
-                if (!handlersAttached) {
-                    console.log('Attaching fallback navigation handlers...');
-                    // Attach fallback handlers
-                    navLinks.forEach(link => {
-                        link.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            const section = this.getAttribute('data-section');
-                            
-                            // Hide all sections
-                            document.querySelectorAll('.content-section').forEach(s => {
-                                s.classList.remove('active');
-                            });
-                            
-                            // Remove active from nav links
-                            document.querySelectorAll('.nav-link').forEach(l => {
-                                l.classList.remove('active');
-                            });
-                            
-                            // Show target section
-                            const target = document.getElementById(section);
-                            if (target) {
-                                target.classList.add('active');
-                            }
-                            
-                            // Activate nav link
-                            this.classList.add('active');
-                            
-                            console.log('Fallback navigation to:', section);
-                        });
-                    });
-                }
-            }, 1000);
-        });
-    </script>
 <script>
     // Mobile menu toggle function is now implemented in app.js
 

@@ -1186,26 +1186,6 @@ function updateBankDisplay() {
         `;
     }
 }
-            </div>
-            
-            <div class="payment-info">
-                <h3>Payment Information</h3>
-                <p><strong>Payment Mode:</strong> ${paymentModeText}</p>
-                ${customerBankInfo ? `<div><strong>Customer Bank Details:</strong><br>${customerBankInfo}</div>` : ''}
-                ${companySettings.bankName ? `
-                    <div style="margin-top: 15px;">
-                        <strong>Our Bank Details:</strong><br>
-                        Bank: ${companySettings.bankName}<br>
-                        Account: ${companySettings.accountNo}<br>
-                        IFSC: ${companySettings.ifscCode}<br>
-                        Account Holder: ${companySettings.accountHolder}
-                    </div>
-                ` : ''}
-                ${notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${notes}</div>` : ''}
-            </div>
-        </div>
-    `;
-}
 
 // Company Settings functions
 async function loadCompanySettings() {
@@ -1532,4 +1512,30 @@ window.testNavigation = function(section) {
     console.log('Testing navigation to:', section);
     showSection(section);
 }
+
+// Mobile menu toggle function
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const navMenu = document.querySelector('.nav-menu');
+    const toggleButton = document.querySelector('.mobile-menu-toggle i');
+    const overlay = document.getElementById('mobile-overlay');
+    const body = document.body;
+    
+    // Toggle classes for both sidebar and nav menu
+    sidebar.classList.toggle('mobile-open');
+    navMenu.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+    
+    // Change icon based on menu state
+    if (sidebar.classList.contains('mobile-open')) {
+        toggleButton.className = 'fas fa-times';
+        body.style.overflow = 'hidden';
+    } else {
+        toggleButton.className = 'fas fa-bars';
+        body.style.overflow = 'auto';
+    }
+}
+
+// Make toggleMobileMenu available globally
+window.toggleMobileMenu = toggleMobileMenu;
 
