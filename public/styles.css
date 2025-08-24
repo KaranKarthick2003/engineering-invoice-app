@@ -10,12 +10,17 @@ body {
     background-color: #f5f7fa;
     color: #333;
     line-height: 1.6;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* App Layout */
 .app-container {
     display: flex;
     min-height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 /* Sidebar */
@@ -80,6 +85,23 @@ body {
     margin-left: 260px;
     padding: 2rem;
     background-color: #f5f7fa;
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* Bank Details Fields */
+.bank-details-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .bank-details-fields {
+        grid-template-columns: 1fr;
+    }
 }
 
 .content-section {
@@ -857,6 +879,7 @@ select:focus {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
+    max-width: 100%;
 }
 
 .item-field {
@@ -916,6 +939,16 @@ select:focus {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
     }
+    
+    .invoice-item {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .item-content {
+        max-width: 100%;
+        overflow-x: auto;
+    }
 }
 
 .invoice-item-form {
@@ -926,6 +959,8 @@ select:focus {
     padding: 1rem;
     background-color: #f7fafc;
     border-radius: 8px;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 .remove-item {
@@ -1205,6 +1240,13 @@ select:focus {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .logo-upload-section {
