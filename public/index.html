@@ -189,30 +189,32 @@
                                 <option value="card">Credit/Debit Card</option>
                             </select>
                         </div>
+                    </div>
 
-                        <div id="customer-bank-details" class="form-group" style="display: none;">
-                            <label for="bank-details-heading">Customer Bank Details</label>
-                            <div class="bank-details-fields">
-                                <div class="form-group">
-                                    <label for="customer-bank-name">Bank Name</label>
-                                    <input type="text" id="customer-bank-name" placeholder="Enter bank name">
-                                </div>
-                                <div class="form-group">
-                                    <label for="customer-account-number">Account Number</label>
-                                    <input type="text" id="customer-account-number" placeholder="Enter account number">
-                                </div>
-                                <div class="form-group">
-                                    <label for="customer-ifsc-code">IFSC Code</label>
-                                    <input type="text" id="customer-ifsc-code" placeholder="Enter IFSC code">
-                                </div>
-                                <div class="form-group">
-                                    <label for="customer-account-holder">Account Holder Name</label>
-                                    <input type="text" id="customer-account-holder" placeholder="Enter account holder name">
-                                </div>
+                    <div id="customer-bank-details" class="bank-details-section" style="display: none;">
+                        <h3>Customer Bank Details</h3>
+                        <div class="bank-details-fields">
+                            <div class="form-group">
+                                <label for="customer-bank-name">Bank Name</label>
+                                <input type="text" id="customer-bank-name" placeholder="Enter bank name">
                             </div>
-                            <input type="hidden" id="customer-bank-info">
+                            <div class="form-group">
+                                <label for="customer-account-number">Account Number</label>
+                                <input type="text" id="customer-account-number" placeholder="Enter account number">
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-ifsc-code">IFSC Code</label>
+                                <input type="text" id="customer-ifsc-code" placeholder="Enter IFSC code">
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-account-holder">Account Holder Name</label>
+                                <input type="text" id="customer-account-holder" placeholder="Enter account holder name">
+                            </div>
                         </div>
+                        <input type="hidden" id="customer-bank-info">
+                    </div>
 
+                    <div class="notes-section">
                         <div class="form-group">
                             <label for="invoice-notes">Notes</label>
                             <textarea id="invoice-notes" placeholder="Additional notes or terms"></textarea>

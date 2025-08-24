@@ -98,9 +98,54 @@ body {
     max-width: 100%;
 }
 
+/* Bank Details Section */
+.bank-details-section {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    border: 1px solid #e2e8f0;
+}
+
+.bank-details-section h3 {
+    margin: 0 0 1rem 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Notes Section */
+.notes-section {
+    margin: 1.5rem 0;
+}
+
+.notes-section .form-group textarea {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+}
+
 @media (max-width: 768px) {
     .bank-details-fields {
         grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .bank-details-section {
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .notes-section {
+        margin: 1rem 0;
+    }
+    
+    .notes-section .form-group textarea {
+        min-height: 80px;
     }
 }
 
