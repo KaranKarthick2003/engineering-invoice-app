@@ -244,6 +244,41 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.invoice-view-container .bank-details-section {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.invoice-view-container .customer-bank-details,
+.invoice-view-container .owner-bank-details {
+    margin-bottom: 1rem;
+}
+
+.invoice-view-container .customer-bank-details:last-child,
+.invoice-view-container .owner-bank-details:last-child {
+    margin-bottom: 0;
+}
+
+.invoice-view-container .customer-bank-details h4,
+.invoice-view-container .owner-bank-details h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.invoice-view-container .customer-bank-details p,
+.invoice-view-container .owner-bank-details p {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+    color: #4a5568;
+}
+
 @media (max-width: 768px) {
     .invoice-view-header {
         grid-template-columns: 1fr;
@@ -261,6 +296,21 @@ body {
     .invoice-view-container .items-table th,
     .invoice-view-container .items-table td {
         padding: 0.5rem 0.25rem;
+    }
+    
+    .invoice-view-container .bank-details-section {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+    }
+    
+    .invoice-view-container .customer-bank-details h4,
+    .invoice-view-container .owner-bank-details h4 {
+        font-size: 0.9rem;
+    }
+    
+    .invoice-view-container .customer-bank-details p,
+    .invoice-view-container .owner-bank-details p {
+        font-size: 0.8rem;
     }
 }
 

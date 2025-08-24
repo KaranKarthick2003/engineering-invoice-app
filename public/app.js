@@ -646,14 +646,31 @@ function generateInvoiceViewHTML(invoice, clientName) {
                 <div class="payment-info">
                     <h3>Payment Information</h3>
                     <p><strong>Payment Mode:</strong> ${invoice.paymentMode || 'Cash Payment'}</p>
-                    ${invoice.bankDetails ? `
-                        <div><strong>Customer Bank Details:</strong><br>
-                        Bank: ${invoice.bankDetails.bankName || 'N/A'}<br>
-                        Account: ${invoice.bankDetails.accountNumber || 'N/A'}<br>
-                        IFSC: ${invoice.bankDetails.ifscCode || 'N/A'}<br>
-                        Holder: ${invoice.bankDetails.accountHolder || 'N/A'}
+                    
+                    ${invoice.paymentMode === 'bank' ? `
+                        <div class="bank-details-section">
+                            <div class="customer-bank-details">
+                                <h4>Customer Bank Details (From):</h4>
+                                ${invoice.bankDetails ? `
+                                    <p><strong>Bank Name:</strong> ${invoice.bankDetails.bankName || 'N/A'}</p>
+                                    <p><strong>Account Number:</strong> ${invoice.bankDetails.accountNumber || 'N/A'}</p>
+                                    <p><strong>IFSC Code:</strong> ${invoice.bankDetails.ifscCode || 'N/A'}</p>
+                                    <p><strong>Account Holder:</strong> ${invoice.bankDetails.accountHolder || 'N/A'}</p>
+                                ` : '<p>No customer bank details provided</p>'}
+                            </div>
+                            
+                            <div class="owner-bank-details">
+                                <h4>Our Bank Details (To):</h4>
+                                ${companySettings.bankName ? `
+                                    <p><strong>Bank Name:</strong> ${companySettings.bankName}</p>
+                                    <p><strong>Account Number:</strong> ${companySettings.accountNo}</p>
+                                    <p><strong>IFSC Code:</strong> ${companySettings.ifscCode}</p>
+                                    <p><strong>Account Holder:</strong> ${companySettings.accountHolder}</p>
+                                ` : '<p>No company bank details configured</p>'}
+                            </div>
                         </div>
                     ` : ''}
+                    
                     ${invoice.notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${invoice.notes}</div>` : ''}
                 </div>
             </div>
@@ -918,6 +935,108 @@ function printInvoice() {
                     }
                     .company-info h1 { 
                         color: #667eea; 
+                        margin: 0 0 10px 0; 
+                        font-size: 24px; 
+                    }
+                    .company-info p { 
+                        margin: 3px 0; 
+                        color: #666; 
+                        font-size: 13px;
+                    }
+                    .invoice-details { 
+                        margin-top: 15px;
+                        text-align: right; 
+                    }
+                    .invoice-details h2 { 
+                        color: #667eea; 
+                        margin: 0; 
+                        font-size: 20px; 
+                    }
+                    .client-info { 
+                        margin: 15px 0; 
+                    }
+                    .client-info h3 { 
+                        color: #333; 
+                        margin-bottom: 8px; 
+                        font-size: 16px;
+                    }
+                    .items-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin: 15px 0; 
+                        font-size: 12px;
+                    }
+                    .items-table th, .items-table td { 
+                        border: 1px solid #ddd; 
+                        padding: 8px 4px; 
+                        text-align: left; 
+                    }
+                    .items-table th { 
+                        background-color: #667eea; 
+                        color: white; 
+                        font-size: 11px;
+                    }
+                    .items-table tr:nth-child(even) { 
+                        background-color: #f9f9f9; 
+                    }
+                    .totals-section { 
+                        margin-top: 15px; 
+                        text-align: right; 
+                    }
+                    .totals-row { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin: 3px 0; 
+                        padding: 3px 0; 
+                        font-size: 14px;
+                    }
+                    .total-final { 
+                        font-weight: bold; 
+                        font-size: 16px; 
+                        border-top: 2px solid #667eea; 
+                        margin-top: 10px; 
+                        padding-top: 10px; 
+                    }
+                    .payment-info {
+                        margin-top: 20px;
+                        padding-top: 15px;
+                        border-top: 1px solid #ddd;
+                    }
+                    .payment-info h3 {
+                        color: #333;
+                        margin-bottom: 10px;
+                        font-size: 16px;
+                    }
+                    .bank-details-section {
+                        margin: 15px 0;
+                        padding: 15px;
+                        background: #f8f9fa;
+                        border: 1px solid #ddd;
+                        border-radius: 5px;
+                    }
+                    .customer-bank-details,
+                    .owner-bank-details {
+                        margin-bottom: 15px;
+                    }
+                    .customer-bank-details:last-child,
+                    .owner-bank-details:last-child {
+                        margin-bottom: 0;
+                    }
+                    .customer-bank-details h4,
+                    .owner-bank-details h4 {
+                        color: #333;
+                        margin-bottom: 8px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        padding-bottom: 5px;
+                        border-bottom: 1px solid #ddd;
+                    }
+                    .customer-bank-details p,
+                    .owner-bank-details p {
+                        margin: 3px 0;
+                        font-size: 12px;
+                        color: #555;
+                    }
                         margin: 0 0 10px 0; 
                         font-size: 24px; 
                     }
@@ -1246,6 +1365,32 @@ function generatePrintableInvoice() {
                         <span>Total Amount:</span>
                         <span>${totalAmount}</span>
                     </div>
+                </div>
+                
+                <div class="payment-info">
+                    <h3>Payment Information</h3>
+                    <p><strong>Payment Mode:</strong> ${paymentModeText}</p>
+                    
+                    ${paymentMode === 'bank' ? `
+                        <div class="bank-details-section">
+                            <div class="customer-bank-details">
+                                <h4>Customer Bank Details (From):</h4>
+                                ${customerBankInfo ? customerBankInfo : '<p>No customer bank details provided</p>'}
+                            </div>
+                            
+                            <div class="owner-bank-details">
+                                <h4>Our Bank Details (To):</h4>
+                                ${companySettings.bankName ? `
+                                    <p><strong>Bank Name:</strong> ${companySettings.bankName}</p>
+                                    <p><strong>Account Number:</strong> ${companySettings.accountNo}</p>
+                                    <p><strong>IFSC Code:</strong> ${companySettings.ifscCode}</p>
+                                    <p><strong>Account Holder:</strong> ${companySettings.accountHolder}</p>
+                                ` : '<p>No company bank details configured</p>'}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${notes}</div>` : ''}
                 </div>
             </div>
         </div>
