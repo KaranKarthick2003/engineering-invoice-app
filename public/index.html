@@ -469,5 +469,20 @@
             }, 1000);
         });
     </script>
+<script>
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        sidebar.classList.toggle('sidebar-open');
+        overlay.classList.toggle('active');
+    }
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            document.getElementById('sidebar').classList.remove('sidebar-open');
+            document.getElementById('mobile-overlay').classList.remove('active');
+        }
+    });
+</script> 
 </body>
 </html>

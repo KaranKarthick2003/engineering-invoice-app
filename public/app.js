@@ -1196,21 +1196,33 @@ function toggleMobileMenu() {
     const body = document.body;
     
     console.log('Toggling mobile menu...');
+    console.log('Sidebar element:', sidebar);
+    console.log('Menu toggle element:', menuToggle);
+    console.log('Overlay element:', overlay);
+    
+    if (!sidebar) {
+        console.error('Sidebar element not found!');
+        return;
+    }
     
     if (sidebar.classList.contains('mobile-open')) {
         // Close menu
         sidebar.classList.remove('mobile-open');
-        overlay.classList.remove('active');
-        menuToggle.className = 'fas fa-bars';
+        if (overlay) overlay.classList.remove('active');
+        if (menuToggle) menuToggle.className = 'fas fa-bars';
         body.style.overflow = 'auto';
         console.log('Mobile menu closed');
     } else {
         // Open menu
         sidebar.classList.add('mobile-open');
-        overlay.classList.add('active');
-        menuToggle.className = 'fas fa-times';
+        if (overlay) overlay.classList.add('active');
+        if (menuToggle) menuToggle.className = 'fas fa-times';
         body.style.overflow = 'hidden';
         console.log('Mobile menu opened');
+        
+        // Force visibility
+        sidebar.style.display = 'block';
+        sidebar.style.visibility = 'visible';
     }
 }
 
