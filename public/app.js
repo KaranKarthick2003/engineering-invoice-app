@@ -19,6 +19,7 @@ function initializeApp() {
         // Load initial data
         loadDashboard();
         loadCompanySettings();
+        loadCustomers();
         
         // Initialize mobile menu functionality
         closeMobileMenuOnNavClick();
@@ -98,367 +99,131 @@ function showSection(sectionId) {
         if (targetSection) {
             targetSection.classList.add('active');
             console.log('Section activated:', sectionId);
+            
+            // Load section-specific data
+            switch(sectionId) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'invoices':
+                    loadInvoices();
+                    break;
+                case 'clients':
+                    displayCustomers();
+                    break;
+                case 'create-invoice':
+                    initializeInvoiceForm();
+                    break;
+                case 'company-settings':
+                    loadCompanySettings();
+                    break;
+            }
+            
+            // Hide company settings buttons on non-company-settings sections
+            hideCompanySettingsButtons(sectionId);
         } else {
             console.error('Section not found:', sectionId);
         }
         
         // Add active class to corresponding nav link
-        const navLink = document.querySelector(`[data-section="${sectionId}"]`);
-        if (navLink) {
-            navLink.classList.add('active');
-            console.log('Nav link activated for:', sectionId);
-        } else {
-            console.error('Nav link not found for:', sectionId);
+        const activeNavLink = document.querySelector(`[data-section="${sectionId}"]`);
+        if (activeNavLink) {
+            activeNavLink.classList.add('active');
         }
+        
     } catch (error) {
-        console.error('Error in showSection:', error);
+        console.error('Error showing section:', error);
     }
-    
-    // Load section-specific data
-    if (sectionId === 'invoices') {
-        loadInvoices();
-    } else if (sectionId === 'clients') {
-        loadCustomers();
-    } else if (sectionId === 'dashboard') {
-        loadDashboard();
-    } else if (sectionId === 'create-invoice') {
-        resetInvoiceForm();
-        loadClientOptions();
-        loadCompanySettings(); // Ensure company settings are loaded
-        updateInvoiceHeader();
-    } else if (sectionId === 'company-settings') {
-        loadCompanySettings();
+}
+
+// Load data from localStorage
+function loadData() {
+    try {
+        const savedInvoices = localStorage.getItem('invoices');
+        const savedCustomers = localStorage.getItem('customers');
+        const savedCompanySettings = localStorage.getItem('companySettings');
+        
+        invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
+        customers = savedCustomers ? JSON.parse(savedCustomers) : [];
+        companySettings = savedCompanySettings ? JSON.parse(savedCompanySettings) : {};
+        
+        console.log('Data loaded:', { invoices: invoices.length, customers: customers.length });
+    } catch (error) {
+        console.error('Error loading data:', error);
+        invoices = [];
+        customers = [];
+        companySettings = {};
     }
-    
-    // Hide/show company settings buttons based on current section
-    hideCompanySettingsButtons(sectionId);
+}
+
+// Save data to localStorage
+function saveData() {
+    try {
+        localStorage.setItem('invoices', JSON.stringify(invoices));
+        localStorage.setItem('customers', JSON.stringify(customers));
+        localStorage.setItem('companySettings', JSON.stringify(companySettings));
+        console.log('Data saved successfully');
+    } catch (error) {
+        console.error('Error saving data:', error);
+    }
 }
 
 // Dashboard functions
 function loadDashboard() {
-    // Load dashboard with mock data since we don't have backend API
-    try {
-        document.getElementById('total-invoices').textContent = invoices.length || 0;
-        document.getElementById('total-revenue').textContent = `₹${calculateTotalRevenue().toFixed(2)}`;
-        document.getElementById('pending-amount').textContent = `₹${calculatePendingAmount().toFixed(2)}`;
-        document.getElementById('overdue-invoices').textContent = calculateOverdueInvoices();
-        
-        // Load recent invoices
-        const recentInvoices = invoices.slice(0, 5);
-        displayRecentInvoices(recentInvoices);
-    } catch (error) {
-        console.error('Error loading dashboard:', error);
-        // Set default values if elements don't exist
-        const totalInvoicesEl = document.getElementById('total-invoices');
-        const totalRevenueEl = document.getElementById('total-revenue');
-        const pendingAmountEl = document.getElementById('pending-amount');
-        const overdueInvoicesEl = document.getElementById('overdue-invoices');
-        
-        if (totalInvoicesEl) totalInvoicesEl.textContent = '0';
-        if (totalRevenueEl) totalRevenueEl.textContent = '₹0.00';
-        if (pendingAmountEl) pendingAmountEl.textContent = '₹0.00';
-        if (overdueInvoicesEl) overdueInvoicesEl.textContent = '0';
-    }
+    loadData();
+    updateDashboardStats();
+    loadRecentInvoices();
 }
 
-function loadInvoices() {
-    // Load invoices from localStorage or use empty array
-    const stored = localStorage.getItem('invoices');
-    invoices = stored ? JSON.parse(stored) : [];
-    return invoices;
+function updateDashboardStats() {
+    const totalInvoices = invoices.length;
+    const totalRevenue = invoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+    const pendingAmount = invoices
+        .filter(invoice => invoice.status !== 'paid')
+        .reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+    const overdueInvoices = invoices.filter(invoice => {
+        if (invoice.status === 'paid') return false;
+        const dueDate = new Date(invoice.dueDate);
+        return dueDate < new Date();
+    }).length;
+    
+    document.getElementById('total-invoices').textContent = totalInvoices;
+    document.getElementById('total-revenue').textContent = `₹${totalRevenue.toFixed(2)}`;
+    document.getElementById('pending-amount').textContent = `₹${pendingAmount.toFixed(2)}`;
+    document.getElementById('overdue-invoices').textContent = overdueInvoices;
 }
 
-function calculateTotalRevenue() {
-    return invoices.reduce((total, invoice) => total + (invoice.total || 0), 0);
-}
-
-function calculatePendingAmount() {
-    return invoices.filter(inv => inv.status === 'pending').reduce((total, invoice) => total + (invoice.total || 0), 0);
-}
-
-function calculateOverdueInvoices() {
-    return invoices.filter(inv => inv.status === 'overdue').length;
-}
-
-function loadCustomers() {
-    // Load customers from localStorage or use sample data
-    const stored = localStorage.getItem('customers');
-    customers = stored ? JSON.parse(stored) : [
-        {
-            id: 1,
-            name: "ABC Construction Ltd",
-            email: "contact@abcconstruction.com",
-            phone: "+91-9876543210",
-            address: "123 Industrial Area, Bangalore - 560001"
-        }
-    ];
-    displayCustomers();
-}
-
-function displayCustomers() {
-    const container = document.getElementById('clients-list');
+function loadRecentInvoices() {
+    const recentInvoices = invoices.slice(-5).reverse();
+    const container = document.getElementById('recent-invoices-list');
+    
     if (!container) return;
     
-    container.innerHTML = customers.map(customer => `
-        <div class="client-card">
-            <h3>${customer.name}</h3>
-            <p><i class="fas fa-envelope"></i> ${customer.email}</p>
-            <p><i class="fas fa-phone"></i> ${customer.phone}</p>
-            <p><i class="fas fa-map-marker-alt"></i> ${customer.address}</p>
-        </div>
-    `).join('');
-}
-
-function resetInvoiceForm() {
-    const form = document.getElementById('invoice-form');
-    if (form) {
-        form.reset();
-        // Reset items table
-        const itemsBody = document.getElementById('invoice-items');
-        if (itemsBody) {
-            itemsBody.innerHTML = '';
-        }
-        updateInvoiceHeader();
-    }
-}
-
-function displayRecentInvoices(invoices) {
-    const container = document.getElementById('recent-invoices');
-    if (!container) return;
+    container.innerHTML = '';
     
-    if (invoices.length === 0) {
-        container.innerHTML = '<p>No recent invoices found.</p>';
+    if (recentInvoices.length === 0) {
+        container.innerHTML = '<p class="no-data">No invoices yet</p>';
         return;
     }
     
-    container.innerHTML = invoices.map(invoice => `
-        <div class="invoice-item">
-            <div class="invoice-info">
-                <h4>Invoice #${invoice.number}</h4>
-                <p>${invoice.clientName}</p>
-                <span class="invoice-status ${invoice.status}">${invoice.status}</span>
-            </div>
-            <div class="invoice-amount">₹${invoice.total.toFixed(2)}</div>
-        </div>
-    `).join('');
+    recentInvoices.forEach(invoice => {
+        const invoiceCard = createInvoiceCard(invoice);
+        container.appendChild(invoiceCard);
+    });
+}
+
+// Customer functions
+function loadCustomers() {
+    loadData();
+    loadClientOptions();
+    displayCustomers();
 }
 
 function loadClientOptions() {
     const select = document.getElementById('client-select');
     if (!select) return;
     
-    loadCustomers();
-    select.innerHTML = '<option value="">Select Customer</option>' + 
-        customers.map(customer => `<option value="${customer.id}">${customer.name}</option>`).join('');
-}
-
-function togglePaymentDetails() {
-    const paymentMode = document.getElementById('payment-mode').value;
-    const bankDetails = document.getElementById('customer-bank-details');
-    const displayMode = document.getElementById('display-payment-mode');
-    const displayBank = document.getElementById('display-customer-bank');
-    
-    // Update payment mode display
-    const paymentModes = {
-        'cash': 'Cash Payment',
-        'bank': 'Bank Transfer',
-        'cheque': 'Cheque Payment',
-        'upi': 'UPI/Digital Payment',
-        'card': 'Credit/Debit Card'
-    };
-    
-    displayMode.textContent = paymentModes[paymentMode];
-    
-    // Show/hide bank details input and display
-    if (paymentMode === 'bank') {
-        bankDetails.style.display = 'block';
-        displayBank.style.display = 'block';
-        
-        // Set up event listeners for bank detail fields
-        setupBankFieldsEventListeners();
-    } else {
-        bankDetails.style.display = 'none';
-        displayBank.style.display = 'none';
-    }
-}
-
-function setupBankFieldsEventListeners() {
-    // Get all bank detail input fields
-    const bankName = document.getElementById('customer-bank-name');
-    const accountNumber = document.getElementById('customer-account-number');
-    const ifscCode = document.getElementById('customer-ifsc-code');
-    const accountHolder = document.getElementById('customer-account-holder');
-    const bankInfoHidden = document.getElementById('customer-bank-info');
-    
-    // Function to update the hidden field and display
-    const updateBankInfo = () => {
-        // Format the bank details
-        const formattedDetails = [
-            `Bank Name: ${bankName.value || ''}`,
-            `Account Number: ${accountNumber.value || ''}`,
-            `IFSC Code: ${ifscCode.value || ''}`,
-            `Account Holder: ${accountHolder.value || ''}`
-        ].join('\n');
-        
-        // Update the hidden field
-        bankInfoHidden.value = formattedDetails;
-        
-        // Update the display
-        const bankDisplay = document.getElementById('display-bank-info');
-        bankDisplay.innerHTML = formattedDetails.replace(/\n/g, '<br>');
-    };
-    
-    // Add event listeners to all fields
-    [bankName, accountNumber, ifscCode, accountHolder].forEach(field => {
-        field.addEventListener('input', updateBankInfo);
-    });
-    
-    // Initial update
-    updateBankInfo();
-}
-
-function addInvoiceItem() {
-    const container = document.getElementById('invoice-items');
-    const itemIndex = container.children.length;
-    
-    const itemHtml = `
-        <div class="invoice-item" data-index="${itemIndex}">
-            <div class="item-header">
-                <h4><i class="fas fa-box"></i> Item ${itemIndex + 1}</h4>
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeInvoiceItem(${itemIndex})">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-            </div>
-            <div class="item-content">
-                <div class="item-row-primary">
-                    <div class="item-field item-field-large">
-                        <label><i class="fas fa-tag"></i> Description *</label>
-                        <input type="text" name="description" placeholder="Enter item/material description" required>
-                    </div>
-                    <div class="item-field">
-                        <label><i class="fas fa-barcode"></i> HSN/SAC Code</label>
-                        <input type="text" name="hsn" placeholder="e.g., 9954">
-                    </div>
-                </div>
-                <div class="item-row-secondary">
-                    <div class="item-field">
-                        <label><i class="fas fa-calculator"></i> Quantity *</label>
-                        <input type="number" name="quantity" value="1" min="0" step="0.01" onchange="calculateItemTotal(${itemIndex})">
-                    </div>
-                    <div class="item-field">
-                        <label><i class="fas fa-ruler"></i> Unit</label>
-                        <select name="unit">
-                            <option value="Nos">Nos</option>
-                            <option value="Sq.Cm">Sq.Cm</option>
-                            <option value="Sq.M">Sq.M</option>
-                            <option value="Hours">Hours</option>
-                            <option value="Days">Days</option>
-                            <option value="Kg">Kg</option>
-                            <option value="Meters">Meters</option>
-                        </select>
-                    </div>
-                    <div class="item-field">
-                        <label><i class="fas fa-rupee-sign"></i> Rate (₹) *</label>
-                        <input type="number" name="rate" placeholder="0.00" min="0" step="0.01" onchange="calculateItemTotal(${itemIndex})">
-                    </div>
-                    <div class="item-field">
-                        <label><i class="fas fa-percent"></i> GST (%)</label>
-                        <input type="number" name="gst" value="18" min="0" max="100" step="0.01" onchange="calculateItemTotal(${itemIndex})">
-                    </div>
-                    <div class="item-field">
-                        <label><i class="fas fa-money-bill"></i> Total Amount (₹)</label>
-                        <input type="number" name="amount" readonly class="readonly-field" placeholder="0.00">
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', itemHtml);
-    calculateInvoiceTotal();
-}
-
-function removeInvoiceItem(index) {
-    const item = document.querySelector(`[data-index="${index}"]`);
-    if (item) {
-        item.remove();
-        calculateInvoiceTotal();
-    }
-}
-
-function calculateItemTotal(index) {
-    const item = document.querySelector(`[data-index="${index}"]`);
-    const quantity = parseFloat(item.querySelector('[name="quantity"]').value) || 0;
-    const rate = parseFloat(item.querySelector('[name="rate"]').value) || 0;
-    const gst = parseFloat(item.querySelector('[name="gst"]').value) || 0;
-    
-    const subtotal = quantity * rate;
-    const gstAmount = (subtotal * gst) / 100;
-    const total = subtotal + gstAmount;
-    
-    item.querySelector('[name="amount"]').value = total.toFixed(2);
-    calculateInvoiceTotal();
-}
-
-function calculateInvoiceTotal() {
-    const items = document.querySelectorAll('.invoice-item');
-    let subtotal = 0;
-    let totalGst = 0;
-    
-    items.forEach(item => {
-        const quantity = parseFloat(item.querySelector('[name="quantity"]').value) || 0;
-        const rate = parseFloat(item.querySelector('[name="rate"]').value) || 0;
-        const gst = parseFloat(item.querySelector('[name="gst"]').value) || 0;
-        
-        const itemSubtotal = quantity * rate;
-        const itemGst = (itemSubtotal * gst) / 100;
-        
-        subtotal += itemSubtotal;
-        totalGst += itemGst;
-    });
-    
-    const total = subtotal + totalGst;
-    
-    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-    document.getElementById('tax-amount').textContent = `₹${totalGst.toFixed(2)}`;
-    document.getElementById('total-amount').textContent = `₹${total.toFixed(2)}`;
-}
-
-// Customer functions
-async function loadCustomers() {
-    try {
-        const response = await fetch('/api/clients');
-        customers = await response.json();
-        displayCustomers(customers);
-        loadClientOptions();
-    } catch (error) {
-        console.error('Error loading customers:', error);
-    }
-}
-
-function displayCustomers(customers) {
-    const container = document.getElementById('clients-list');
-    
-    if (customers.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No customers found. Add your first customer to get started.</p></div>';
-        return;
-    }
-    
-    container.innerHTML = customers.map(customer => `
-        <div class="client-card">
-            <h3>${customer.name}</h3>
-            <p><i class="fas fa-envelope"></i> ${customer.email}</p>
-            ${customer.phone ? `<p><i class="fas fa-phone"></i> ${customer.phone}</p>` : ''}
-            ${customer.address ? `<p><i class="fas fa-map-marker-alt"></i> ${customer.address}</p>` : ''}
-            <p><i class="fas fa-calendar"></i> Added: ${new Date(customer.createdAt).toLocaleDateString()}</p>
-        </div>
-    `).join('');
-}
-
-// ... (rest of the code remains the same)
-function loadClientOptions() {
-    const select = document.getElementById('client-select');
-    select.innerHTML = '<option value="">Select a customer</option>';
+    select.innerHTML = '<option value="">Choose a customer...</option>';
     
     customers.forEach(customer => {
         const option = document.createElement('option');
@@ -468,44 +233,192 @@ function loadClientOptions() {
     });
 }
 
-async function handleClientSubmit(e) {
+function displayCustomers() {
+    const container = document.getElementById('clients-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (customers.length === 0) {
+        container.innerHTML = '<p class="no-data">No customers yet. Add your first customer!</p>';
+        return;
+    }
+    
+    customers.forEach(customer => {
+        const customerCard = document.createElement('div');
+        customerCard.className = 'customer-card';
+        customerCard.innerHTML = `
+            <div class="customer-info">
+                <h3>${customer.name}</h3>
+                <p><i class="fas fa-envelope"></i> ${customer.email}</p>
+                ${customer.phone ? `<p><i class="fas fa-phone"></i> ${customer.phone}</p>` : ''}
+                ${customer.address ? `<p><i class="fas fa-map-marker-alt"></i> ${customer.address}</p>` : ''}
+            </div>
+            <div class="customer-actions">
+                <button class="btn btn-secondary" onclick="editCustomer('${customer.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(customerCard);
+    });
+}
+
+function handleClientSubmit(e) {
     e.preventDefault();
     
+    const formData = new FormData(e.target);
     const clientData = {
-        name: document.getElementById('client-name').value,
-        email: document.getElementById('client-email').value,
-        phone: document.getElementById('client-phone').value,
-        address: document.getElementById('client-address').value
+        id: Date.now().toString(),
+        name: formData.get('client-name'),
+        email: formData.get('client-email'),
+        phone: formData.get('client-phone'),
+        address: formData.get('client-address')
     };
     
-    try {
-        const response = await fetch('/api/clients', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(clientData)
-        });
-        
-        if (response.ok) {
-            closeClientModal();
-            await loadCustomers();
-        }
-    } catch (error) {
-        console.error('Error saving client:', error);
+    // Validate required fields
+    if (!clientData.name || !clientData.email) {
+        alert('Please fill in all required fields (Name and Email)');
+        return;
+    }
+    
+    // Add to customers array
+    customers.push(clientData);
+    
+    // Save to localStorage
+    saveData();
+    
+    // Close modal and refresh display
+    closeClientModal();
+    loadClientOptions();
+    displayCustomers();
+    
+    // Show success message
+    alert('Customer added successfully!');
+}
+
+// Invoice functions
+function loadInvoices() {
+    loadData();
+    displayInvoices();
+}
+
+function displayInvoices() {
+    const container = document.getElementById('invoices-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (invoices.length === 0) {
+        container.innerHTML = '<p class="no-data">No invoices yet. Create your first invoice!</p>';
+        return;
+    }
+    
+    invoices.forEach(invoice => {
+        const invoiceCard = createInvoiceCard(invoice);
+        container.appendChild(invoiceCard);
+    });
+}
+
+function createInvoiceCard(invoice) {
+    const card = document.createElement('div');
+    card.className = 'invoice-card';
+    
+    const statusClass = invoice.status || 'draft';
+    const statusText = statusClass.charAt(0).toUpperCase() + statusClass.slice(1);
+    
+    card.innerHTML = `
+        <div class="invoice-header">
+            <h3>Invoice #${invoice.invoiceNumber}</h3>
+            <span class="status ${statusClass}">${statusText}</span>
+        </div>
+        <div class="invoice-details">
+            <p><strong>Client:</strong> ${invoice.clientName || 'N/A'}</p>
+            <p><strong>Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</p>
+            <p><strong>Amount:</strong> ₹${(invoice.total || 0).toFixed(2)}</p>
+        </div>
+        <div class="invoice-actions">
+            <button class="btn btn-secondary" onclick="viewInvoice('${invoice.id}')">
+                <i class="fas fa-eye"></i> View
+            </button>
+            <button class="btn btn-primary" onclick="editInvoice('${invoice.id}')">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-danger" onclick="deleteInvoice('${invoice.id}')">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+function editCustomer(customerId) {
+    // Implementation for editing customer
+    console.log('Edit customer:', customerId);
+    alert('Edit customer functionality coming soon!');
+}
+
+function deleteCustomer(customerId) {
+    if (confirm('Are you sure you want to delete this customer?')) {
+        customers = customers.filter(customer => customer.id !== customerId);
+        saveData();
+        displayCustomers();
+        loadClientOptions();
+        alert('Customer deleted successfully!');
+    }
+}
+
+function viewInvoice(invoiceId) {
+    // Implementation for viewing invoice
+    console.log('View invoice:', invoiceId);
+    alert('View invoice functionality coming soon!');
+}
+
+function editInvoice(invoiceId) {
+    // Implementation for editing invoice
+    console.log('Edit invoice:', invoiceId);
+    alert('Edit invoice functionality coming soon!');
+}
+
+function deleteInvoice(invoiceId) {
+    if (confirm('Are you sure you want to delete this invoice?')) {
+        invoices = invoices.filter(invoice => invoice.id !== invoiceId);
+        saveData();
+        displayInvoices();
+        loadDashboard();
+        alert('Invoice deleted successfully!');
     }
 }
 
 // Modal functions
 function showClientModal() {
-    document.getElementById('client-modal').style.display = 'block';
-    document.getElementById('client-form').reset();
+    const modal = document.getElementById('client-modal');
+    if (modal) {
+        modal.style.display = 'block';
+        // Reset form
+        const form = document.getElementById('client-form');
+        if (form) {
+            form.reset();
+        }
+    }
 }
 
 function closeClientModal() {
-    document.getElementById('client-modal').style.display = 'none';
+    const modal = document.getElementById('client-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function closeInvoiceModal() {
-    document.getElementById('invoice-modal').style.display = 'none';
+    const modal = document.getElementById('invoice-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Mobile menu toggle function
@@ -550,11 +463,88 @@ function closeMobileMenuOnNavClick() {
 }
 
 // Invoice functions
-// This function is now implemented at line 1190
-async function handleInvoiceSubmit(e) {
+function initializeInvoiceForm() {
+    const form = document.getElementById('invoice-form');
+    if (form) {
+        form.reset();
+        // Reset items table
+        const itemsBody = document.getElementById('invoice-items');
+        if (itemsBody) {
+            itemsBody.innerHTML = '';
+        }
+        updateInvoiceHeader();
+    }
+}
+
+function handleInvoiceSubmit(e) {
     e.preventDefault();
-    // Redirecting to the main implementation
-    return handleInvoiceSubmit(e);
+    
+    try {
+        // Get basic invoice data
+        const clientId = document.getElementById('client-select').value;
+        const description = document.getElementById('invoice-description').value;
+        const taxRate = document.getElementById('tax-rate').value;
+        const paymentMode = document.getElementById('payment-mode').value;
+        const notes = document.getElementById('invoice-notes').value;
+        
+        // Get bank details if payment mode is bank transfer
+        let bankDetails = null;
+        if (paymentMode === 'bank') {
+            bankDetails = {
+                bankName: document.getElementById('customer-bank-name').value,
+                accountNumber: document.getElementById('customer-account-number').value,
+                ifscCode: document.getElementById('customer-ifsc-code').value,
+                accountHolder: document.getElementById('customer-account-holder').value
+            };
+        }
+        
+        // Get items from the invoice
+        const itemsContainer = document.getElementById('invoice-items');
+        const itemRows = itemsContainer.querySelectorAll('.invoice-item');
+        const items = [];
+        
+        itemRows.forEach(row => {
+            const description = row.querySelector('.item-description').value;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value);
+            const rate = parseFloat(row.querySelector('.item-rate').value);
+            const amount = parseFloat(row.querySelector('.item-amount').textContent.replace('₹', ''));
+            
+            items.push({ description, quantity, rate, amount });
+        });
+        
+        // Calculate totals
+        const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('₹', ''));
+        const taxAmount = parseFloat(document.getElementById('tax-amount').textContent.replace('₹', ''));
+        const total = parseFloat(document.getElementById('total-amount').textContent.replace('₹', ''));
+        
+        // Create invoice object
+        const invoice = {
+            id: Date.now(),
+            number: document.getElementById('preview-invoice-number').textContent,
+            date: new Date().toISOString(),
+            clientId,
+            description,
+            taxRate,
+            paymentMode,
+            bankDetails,
+            notes,
+            items,
+            subtotal,
+            taxAmount,
+            total,
+            status: 'draft'
+        };
+        
+        // Save to localStorage
+        invoices.push(invoice);
+        saveData();
+        
+        alert('Invoice saved successfully!');
+        showSection('invoices');
+    } catch (error) {
+        console.error('Error saving invoice:', error);
+        alert('Error saving invoice. Please try again.');
+    }
 }
 
 function printInvoice() {
@@ -959,25 +949,6 @@ function generatePrintableInvoice() {
     `;
 }
 
-async function handleClientSubmit(e) {
-    e.preventDefault();
-    console.log('Client form submitted');
-    
-    // Get form data
-    const formData = new FormData(e.target);
-    const clientData = Object.fromEntries(formData.entries());
-    
-    try {
-        // Save client (placeholder for now)
-        console.log('Client data:', clientData);
-        alert('Client saved successfully!');
-        closeClientModal();
-    } catch (error) {
-        console.error('Error saving client:', error);
-        alert('Error saving client. Please try again.');
-    }
-}
-
 // Company Settings functions
 async function loadCompanySettings() {
     try {
@@ -1236,9 +1207,8 @@ function handleInvoiceSubmit(e) {
         };
         
         // Save to localStorage
-        const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
         invoices.push(invoice);
-        localStorage.setItem('invoices', JSON.stringify(invoices));
+        saveData();
         
         alert('Invoice saved successfully!');
         showSection('invoices');
@@ -1248,60 +1218,16 @@ function handleInvoiceSubmit(e) {
     }
 }
 
-function handleClientSubmit(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const newClient = {
-        id: Date.now(),
-        name: formData.get('client-name'),
-        email: formData.get('client-email'),
-        phone: formData.get('client-phone'),
-        address: formData.get('client-address')
-    };
-    
-    customers.push(newClient);
-    localStorage.setItem('customers', JSON.stringify(customers));
-    
-    closeClientModal();
-    loadClientOptions();
-    displayCustomers();
-    alert('Customer added successfully!');
-}
-
-// Modal functions
-function showClientModal() {
-    document.getElementById('client-modal').style.display = 'block';
-}
-
-function closeClientModal() {
-    document.getElementById('client-modal').style.display = 'none';
-}
-
-function closeInvoiceModal() {
-    const modal = document.getElementById('invoice-modal');
-    if (modal) modal.style.display = 'none';
-}
-
-// Mobile menu functions - Implementation moved to line 480
-
-function closeMobileMenuOnNavClick() {
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const menuToggle = document.querySelector('.mobile-menu-toggle i');
-            const overlay = document.getElementById('mobile-overlay');
-            const body = document.body;
-            
-            // Close mobile menu when nav link is clicked
-            if (sidebar.classList.contains('mobile-open')) {
-                sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
-                menuToggle.className = 'fas fa-bars';
-                body.style.overflow = 'auto';
-                console.log('Mobile menu closed via navigation');
-            }
-        });
-    });
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const clientModal = document.getElementById('client-modal');
+    const invoiceModal = document.getElementById('invoice-modal');
+    if (event.target === clientModal) {
+        closeClientModal();
+    }
+    if (event.target === invoiceModal) {
+        closeInvoiceModal();
+    }
 }
 
 // Function to hide company settings buttons on non-company-settings sections
@@ -1354,3 +1280,4 @@ window.onclick = function(event) {
         closeInvoiceModal();
     }
 }
+
