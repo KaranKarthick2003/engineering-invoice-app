@@ -429,15 +429,236 @@ function deleteCustomer(customerId) {
 }
 
 function viewInvoice(invoiceId) {
-    // Implementation for viewing invoice
-    console.log('View invoice:', invoiceId);
-    alert('View invoice functionality coming soon!');
+    const invoice = invoices.find(inv => inv.id == invoiceId);
+    if (!invoice) {
+        alert('Invoice not found!');
+        return;
+    }
+    
+    // Get client name
+    const client = customers.find(c => c.id == invoice.clientId);
+    const clientName = client ? client.name : 'Unknown Client';
+    
+    // Generate invoice HTML
+    const invoiceHTML = generateInvoiceViewHTML(invoice, clientName);
+    
+    // Display in modal
+    const modal = document.getElementById('invoice-modal');
+    const detailsContainer = document.getElementById('invoice-details');
+    
+    if (modal && detailsContainer) {
+        detailsContainer.innerHTML = invoiceHTML;
+        modal.style.display = 'block';
+    }
 }
 
 function editInvoice(invoiceId) {
-    // Implementation for editing invoice
-    console.log('Edit invoice:', invoiceId);
-    alert('Edit invoice functionality coming soon!');
+    const invoice = invoices.find(inv => inv.id == invoiceId);
+    if (!invoice) {
+        alert('Invoice not found!');
+        return;
+    }
+    
+    // Set current invoice ID for editing
+    currentInvoiceId = invoiceId;
+    
+    // Navigate to create invoice section
+    showSection('create-invoice');
+    
+    // Update form title
+    const titleElement = document.getElementById('invoice-form-title');
+    if (titleElement) {
+        titleElement.textContent = 'Edit Invoice';
+    }
+    
+    // Populate form with invoice data
+    populateInvoiceForm(invoice);
+}
+
+function populateInvoiceForm(invoice) {
+    // Set basic form fields
+    document.getElementById('client-select').value = invoice.clientId || '';
+    document.getElementById('invoice-description').value = invoice.description || '';
+    document.getElementById('tax-rate').value = invoice.taxRate || 10;
+    document.getElementById('payment-mode').value = invoice.paymentMode || 'cash';
+    document.getElementById('invoice-notes').value = invoice.notes || '';
+    
+    // Handle payment mode
+    togglePaymentDetails();
+    
+    // Set bank details if available
+    if (invoice.bankDetails) {
+        document.getElementById('customer-bank-name').value = invoice.bankDetails.bankName || '';
+        document.getElementById('customer-account-number').value = invoice.bankDetails.accountNumber || '';
+        document.getElementById('customer-ifsc-code').value = invoice.bankDetails.ifscCode || '';
+        document.getElementById('customer-account-holder').value = invoice.bankDetails.accountHolder || '';
+        updateBankDisplay();
+    }
+    
+    // Clear existing items
+    const itemsContainer = document.getElementById('invoice-items');
+    if (itemsContainer) {
+        itemsContainer.innerHTML = '';
+    }
+    
+    // Add invoice items
+    if (invoice.items && invoice.items.length > 0) {
+        invoice.items.forEach(item => {
+            addInvoiceItemWithData(item);
+        });
+    }
+    
+    // Update totals
+    calculateInvoiceTotals();
+    
+    // Update invoice header
+    updateInvoiceHeader();
+}
+
+function addInvoiceItemWithData(itemData) {
+    const itemsContainer = document.getElementById('invoice-items');
+    if (!itemsContainer) return;
+    
+    const itemId = Date.now().toString();
+    const itemRow = document.createElement('div');
+    itemRow.className = 'invoice-item';
+    itemRow.id = `item-${itemId}`;
+    
+    itemRow.innerHTML = `
+        <div class="item-content">
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" class="item-description" placeholder="Item description" value="${itemData.description || ''}" required>
+            </div>
+            <div class="form-group">
+                <label>HSN/SAC</label>
+                <input type="text" class="item-hsn" placeholder="HSN/SAC code" value="${itemData.hsn || ''}">
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" class="item-quantity" value="${itemData.quantity || 1}" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Sq/M</label>
+                <input type="number" class="item-sqm" value="${itemData.sqm || 0}" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Rate (₹)</label>
+                <input type="number" class="item-rate" value="${itemData.rate || 0}" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Amount (₹)</label>
+                <span class="item-amount">₹${(itemData.amount || 0).toFixed(2)}</span>
+            </div>
+            <div class="form-group">
+                <button type="button" class="remove-item" onclick="removeInvoiceItem('${itemId}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    itemsContainer.appendChild(itemRow);
+    
+    // Add event listeners for calculation
+    const quantityInput = itemRow.querySelector('.item-quantity');
+    const sqmInput = itemRow.querySelector('.item-sqm');
+    const rateInput = itemRow.querySelector('.item-rate');
+    
+    [quantityInput, sqmInput, rateInput].forEach(input => {
+        input.addEventListener('input', () => calculateItemAmount(itemId));
+    });
+}
+
+function generateInvoiceViewHTML(invoice, clientName) {
+    const itemsHTML = invoice.items && invoice.items.length > 0 ? 
+        invoice.items.map(item => `
+            <tr>
+                <td>${item.description || ''}</td>
+                <td>${item.hsn || ''}</td>
+                <td>${item.quantity || 0}</td>
+                <td>${item.sqm || 0}</td>
+                <td>₹${(item.rate || 0).toFixed(2)}</td>
+                <td>₹${(item.amount || 0).toFixed(2)}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="6" style="text-align: center; color: #666;">No items</td></tr>';
+    
+    return `
+        <div class="invoice-view-container">
+            <div class="invoice-view-header">
+                <div class="company-info">
+                    <h2>${companySettings.name || 'Your Company Name'}</h2>
+                    <p>${companySettings.tagline || ''}</p>
+                    <p>${companySettings.address || 'Your Address'}</p>
+                    <p>Phone: ${companySettings.phone || 'Your Phone'}</p>
+                    <p>Email: ${companySettings.email || 'your@email.com'}</p>
+                    <p>GSTIN: ${companySettings.gstin || 'Your GSTIN'}</p>
+                </div>
+                <div class="invoice-meta">
+                    <h2>INVOICE</h2>
+                    <p><strong>Invoice #:</strong> ${invoice.number || 'N/A'}</p>
+                    <p><strong>Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</p>
+                    <p><strong>Status:</strong> <span class="status ${invoice.status || 'draft'}">${(invoice.status || 'draft').toUpperCase()}</span></p>
+                </div>
+            </div>
+            
+            <div class="client-info">
+                <h3>Bill To:</h3>
+                <p><strong>${clientName}</strong></p>
+            </div>
+            
+            <div class="invoice-content">
+                <h3>Project Description:</h3>
+                <p>${invoice.description || 'N/A'}</p>
+                
+                <h3>Invoice Items:</h3>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>HSN/SAC</th>
+                            <th>Qty</th>
+                            <th>Sq/M</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+                
+                <div class="totals-section">
+                    <div class="totals-row">
+                        <span>Subtotal:</span>
+                        <span>₹${(invoice.subtotal || 0).toFixed(2)}</span>
+                    </div>
+                    <div class="totals-row">
+                        <span>Tax (${invoice.taxRate || 0}%):</span>
+                        <span>₹${(invoice.taxAmount || 0).toFixed(2)}</span>
+                    </div>
+                    <div class="totals-row total-final">
+                        <span>Total Amount:</span>
+                        <span>₹${(invoice.total || 0).toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <div class="payment-info">
+                    <h3>Payment Information</h3>
+                    <p><strong>Payment Mode:</strong> ${invoice.paymentMode || 'Cash Payment'}</p>
+                    ${invoice.bankDetails ? `
+                        <div><strong>Customer Bank Details:</strong><br>
+                        Bank: ${invoice.bankDetails.bankName || 'N/A'}<br>
+                        Account: ${invoice.bankDetails.accountNumber || 'N/A'}<br>
+                        IFSC: ${invoice.bankDetails.ifscCode || 'N/A'}<br>
+                        Holder: ${invoice.bankDetails.accountHolder || 'N/A'}
+                        </div>
+                    ` : ''}
+                    ${invoice.notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${invoice.notes}</div>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function deleteInvoice(invoiceId) {
@@ -528,6 +749,25 @@ function initializeInvoiceForm() {
         if (itemsBody) {
             itemsBody.innerHTML = '';
         }
+        
+        // Reset form title
+        const titleElement = document.getElementById('invoice-form-title');
+        if (titleElement) {
+            titleElement.textContent = 'Create New Invoice';
+        }
+        
+        // Reset current invoice ID
+        currentInvoiceId = null;
+        
+        // Reset payment mode display
+        document.getElementById('display-payment-mode').textContent = 'Cash Payment';
+        document.getElementById('display-customer-bank').style.display = 'none';
+        
+        // Reset totals
+        document.getElementById('subtotal').textContent = '₹0.00';
+        document.getElementById('tax-amount').textContent = '₹0.00';
+        document.getElementById('total-amount').textContent = '₹0.00';
+        
         updateInvoiceHeader();
     }
 }
@@ -573,29 +813,52 @@ function handleInvoiceSubmit(e) {
         const taxAmount = parseFloat(document.getElementById('tax-amount').textContent.replace('₹', ''));
         const total = parseFloat(document.getElementById('total-amount').textContent.replace('₹', ''));
         
-        // Create invoice object
-        const invoice = {
-            id: Date.now(),
-            number: document.getElementById('preview-invoice-number').textContent,
-            date: new Date().toISOString(),
-            clientId,
-            description,
-            taxRate,
-            paymentMode,
-            bankDetails,
-            notes,
-            items,
-            subtotal,
-            taxAmount,
-            total,
-            status: 'draft'
-        };
+        // Check if we're editing an existing invoice
+        if (currentInvoiceId) {
+            // Update existing invoice
+            const existingInvoiceIndex = invoices.findIndex(inv => inv.id == currentInvoiceId);
+            if (existingInvoiceIndex !== -1) {
+                invoices[existingInvoiceIndex] = {
+                    ...invoices[existingInvoiceIndex],
+                    clientId,
+                    description,
+                    taxRate,
+                    paymentMode,
+                    bankDetails,
+                    notes,
+                    items,
+                    subtotal,
+                    taxAmount,
+                    total
+                };
+                alert('Invoice updated successfully!');
+            }
+        } else {
+            // Create new invoice object
+            const invoice = {
+                id: Date.now(),
+                number: document.getElementById('preview-invoice-number').textContent,
+                date: new Date().toISOString(),
+                clientId,
+                description,
+                taxRate,
+                paymentMode,
+                bankDetails,
+                notes,
+                items,
+                subtotal,
+                taxAmount,
+                total,
+                status: 'draft'
+            };
+            
+            // Save to localStorage
+            invoices.push(invoice);
+            alert('Invoice saved successfully!');
+        }
         
-        // Save to localStorage
-        invoices.push(invoice);
         saveData();
-        
-        alert('Invoice saved successfully!');
+        currentInvoiceId = null; // Reset for next invoice
         showSection('invoices');
     } catch (error) {
         console.error('Error saving invoice:', error);
