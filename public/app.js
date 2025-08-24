@@ -479,16 +479,24 @@ function closeInvoiceModal() {
 
 // Mobile menu toggle function
 function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
     const navMenu = document.querySelector('.nav-menu');
     const toggleButton = document.querySelector('.mobile-menu-toggle i');
+    const overlay = document.getElementById('mobile-overlay');
+    const body = document.body;
     
+    // Toggle classes for both sidebar and nav menu
+    sidebar.classList.toggle('mobile-open');
     navMenu.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
     
     // Change icon based on menu state
-    if (navMenu.classList.contains('mobile-open')) {
+    if (sidebar.classList.contains('mobile-open')) {
         toggleButton.className = 'fas fa-times';
+        body.style.overflow = 'hidden';
     } else {
         toggleButton.className = 'fas fa-bars';
+        body.style.overflow = 'auto';
     }
 }
 
@@ -1188,43 +1196,7 @@ function closeInvoiceModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Mobile menu functions
-function toggleMobileMenu() {
-    const sidebar = document.getElementById('sidebar');
-    const menuToggle = document.querySelector('.mobile-menu-toggle i');
-    const overlay = document.getElementById('mobile-overlay');
-    const body = document.body;
-    
-    console.log('Toggling mobile menu...');
-    console.log('Sidebar element:', sidebar);
-    console.log('Menu toggle element:', menuToggle);
-    console.log('Overlay element:', overlay);
-    
-    if (!sidebar) {
-        console.error('Sidebar element not found!');
-        return;
-    }
-    
-    if (sidebar.classList.contains('mobile-open')) {
-        // Close menu
-        sidebar.classList.remove('mobile-open');
-        if (overlay) overlay.classList.remove('active');
-        if (menuToggle) menuToggle.className = 'fas fa-bars';
-        body.style.overflow = 'auto';
-        console.log('Mobile menu closed');
-    } else {
-        // Open menu
-        sidebar.classList.add('mobile-open');
-        if (overlay) overlay.classList.add('active');
-        if (menuToggle) menuToggle.className = 'fas fa-times';
-        body.style.overflow = 'hidden';
-        console.log('Mobile menu opened');
-        
-        // Force visibility
-        sidebar.style.display = 'block';
-        sidebar.style.visibility = 'visible';
-    }
-}
+// Mobile menu functions - Implementation moved to line 480
 
 function closeMobileMenuOnNavClick() {
     document.querySelectorAll('.nav-link').forEach(link => {
