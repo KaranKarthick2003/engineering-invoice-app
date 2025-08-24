@@ -898,12 +898,27 @@ function printInvoice() {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Invoice - Print</title>
                 <style>
+                    @page {
+                        size: A4;
+                        margin: 15mm;
+                    }
                     body { 
                         font-family: Arial, sans-serif; 
-                        margin: 10px; 
+                        margin: 0; 
                         padding: 0; 
                         color: #333; 
-                        font-size: 14px;
+                        font-size: 12px;
+                        line-height: 1.3;
+                    }
+                    .page-container {
+                        width: 100%;
+                        max-width: 210mm;
+                        min-height: 297mm;
+                        margin: 0 auto;
+                        background: white;
+                        position: relative;
+                        padding: 10mm;
+                        box-sizing: border-box;
                     }
                     .mobile-actions {
                         position: fixed;
@@ -923,25 +938,40 @@ function printInvoice() {
                         cursor: pointer;
                     }
                     .invoice-container { 
-                        max-width: 100%; 
-                        margin: 50px 0 0 0; 
-                        background: white; 
+                        width: 100%;
+                        height: 100%;
+                        background: white;
+                        position: relative;
+                    }
+                    .signature-section {
+                        position: absolute;
+                        bottom: 20mm;
+                        right: 10mm;
+                        width: 60mm;
+                        text-align: center;
+                    }
+                    .signature-line {
+                        border-top: 1px solid #333;
+                        margin-top: 25mm;
+                        padding-top: 5mm;
+                        font-size: 11px;
+                        color: #666;
                     }
                     .invoice-header { 
                         display: block;
-                        margin-bottom: 20px; 
+                        margin-bottom: 15px; 
                         border-bottom: 2px solid #667eea; 
-                        padding-bottom: 15px; 
+                        padding-bottom: 10px; 
                     }
                     .company-info h1 { 
                         color: #667eea; 
-                        margin: 0 0 10px 0; 
-                        font-size: 24px; 
+                        margin: 0 0 8px 0; 
+                        font-size: 20px; 
                     }
                     .company-info p { 
-                        margin: 3px 0; 
+                        margin: 2px 0; 
                         color: #666; 
-                        font-size: 13px;
+                        font-size: 11px;
                     }
                     .invoice-details { 
                         margin-top: 15px;
@@ -1322,75 +1352,83 @@ function generatePrintableInvoice() {
     }
     
     return `
-        <div class="invoice-container">
-            <div class="invoice-header">
-                <div class="company-info">
-                    <div class="logo">${logoHTML}</div>
-                    <h1>${companySettings.name || 'Your Company Name'}</h1>
-                    <p>${companySettings.tagline || ''}</p>
-                    <p>${companySettings.address || 'Your Address'}</p>
-                    <p>Phone: ${companySettings.phone || 'Your Phone'}</p>
-                    <p>Email: ${companySettings.email || 'your@email.com'}</p>
-                    <p>GSTIN: ${companySettings.gstin || 'Your GSTIN'}</p>
-                </div>
-                <div class="invoice-details">
-                    <h2>INVOICE</h2>
-                    <p><strong>Invoice #:</strong> INV-${Date.now().toString().slice(-6)}</p>
-                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-                </div>
-            </div>
-            
-            <div class="client-info">
-                <h3>Bill To:</h3>
-                <p><strong>${selectedClient}</strong></p>
-            </div>
-            
-            <div class="invoice-content">
-                <h3>Project Description:</h3>
-                <p>${description}</p>
-                
-                <h3>Invoice Items:</h3>
-                ${itemsHTML}
-                
-                <div class="totals-section">
-                    <div class="totals-row">
-                        <span>Subtotal:</span>
-                        <span>${subtotal}</span>
+        <div class="page-container">
+            <div class="invoice-container">
+                <div class="invoice-header">
+                    <div class="company-info">
+                        <div class="logo">${logoHTML}</div>
+                        <h1>${companySettings.name || 'Your Company Name'}</h1>
+                        <p>${companySettings.tagline || ''}</p>
+                        <p>${companySettings.address || 'Your Address'}</p>
+                        <p>Phone: ${companySettings.phone || 'Your Phone'}</p>
+                        <p>Email: ${companySettings.email || 'your@email.com'}</p>
+                        <p>GSTIN: ${companySettings.gstin || 'Your GSTIN'}</p>
                     </div>
-                    <div class="totals-row">
-                        <span>Tax (${taxRate}%):</span>
-                        <span>${taxAmount}</span>
-                    </div>
-                    <div class="totals-row total-final">
-                        <span>Total Amount:</span>
-                        <span>${totalAmount}</span>
+                    <div class="invoice-details">
+                        <h2>INVOICE</h2>
+                        <p><strong>Invoice #:</strong> INV-${Date.now().toString().slice(-6)}</p>
+                        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
                 
-                <div class="payment-info">
-                    <h3>Payment Information</h3>
-                    <p><strong>Payment Mode:</strong> ${paymentModeText}</p>
+                <div class="client-info">
+                    <h3>Bill To:</h3>
+                    <p><strong>${selectedClient}</strong></p>
+                </div>
+                
+                <div class="invoice-content">
+                    <h3>Project Description:</h3>
+                    <p>${description}</p>
                     
-                    ${paymentMode === 'bank' ? `
-                        <div class="bank-details-section">
-                            <div class="customer-bank-details">
-                                <h4>Customer Bank Details (From):</h4>
-                                ${customerBankInfo ? customerBankInfo : '<p>No customer bank details provided</p>'}
-                            </div>
-                            
-                            <div class="owner-bank-details">
-                                <h4>Our Bank Details (To):</h4>
-                                ${companySettings.bankName ? `
-                                    <p><strong>Bank Name:</strong> ${companySettings.bankName}</p>
-                                    <p><strong>Account Number:</strong> ${companySettings.accountNo}</p>
-                                    <p><strong>IFSC Code:</strong> ${companySettings.ifscCode}</p>
-                                    <p><strong>Account Holder:</strong> ${companySettings.accountHolder}</p>
-                                ` : '<p>No company bank details configured</p>'}
-                            </div>
+                    <h3>Invoice Items:</h3>
+                    ${itemsHTML}
+                    
+                    <div class="totals-section">
+                        <div class="totals-row">
+                            <span>Subtotal:</span>
+                            <span>${subtotal}</span>
                         </div>
-                    ` : ''}
+                        <div class="totals-row">
+                            <span>Tax (${taxRate}%):</span>
+                            <span>${taxAmount}</span>
+                        </div>
+                        <div class="totals-row total-final">
+                            <span>Total Amount:</span>
+                            <span>${totalAmount}</span>
+                        </div>
+                    </div>
                     
-                    ${notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${notes}</div>` : ''}
+                    <div class="payment-info">
+                        <h3>Payment Information</h3>
+                        <p><strong>Payment Mode:</strong> ${paymentModeText}</p>
+                        
+                        ${paymentMode === 'bank' ? `
+                            <div class="bank-details-section">
+                                <div class="customer-bank-details">
+                                    <h4>Customer Bank Details (From):</h4>
+                                    ${customerBankInfo ? customerBankInfo : '<p>No customer bank details provided</p>'}
+                                </div>
+                                
+                                <div class="owner-bank-details">
+                                    <h4>Our Bank Details (To):</h4>
+                                    ${companySettings.bankName ? `
+                                        <p><strong>Bank Name:</strong> ${companySettings.bankName}</p>
+                                        <p><strong>Account Number:</strong> ${companySettings.accountNo}</p>
+                                        <p><strong>IFSC Code:</strong> ${companySettings.ifscCode}</p>
+                                        <p><strong>Account Holder:</strong> ${companySettings.accountHolder}</p>
+                                    ` : '<p>No company bank details configured</p>'}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong><br>${notes}</div>` : ''}
+                    </div>
+                </div>
+                
+                <div class="signature-section">
+                    <div class="signature-line">
+                        Authorized Signature
+                    </div>
                 </div>
             </div>
         </div>
