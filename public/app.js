@@ -270,6 +270,8 @@ function displayCustomers() {
 function handleClientSubmit(e) {
     e.preventDefault();
     
+    console.log('Form submitted, collecting data...');
+    
     const formData = new FormData(e.target);
     const clientData = {
         id: Date.now().toString(),
@@ -279,11 +281,27 @@ function handleClientSubmit(e) {
         address: formData.get('client-address')
     };
     
+    console.log('Collected client data:', clientData);
+    
     // Validate required fields
-    if (!clientData.name || !clientData.email) {
-        alert('Please fill in all required fields (Name and Email)');
+    if (!clientData.name || clientData.name.trim() === '') {
+        alert('Please enter a company name');
         return;
     }
+    
+    if (!clientData.email || clientData.email.trim() === '') {
+        alert('Please enter an email address');
+        return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(clientData.email)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    console.log('Validation passed, adding customer...');
     
     // Add to customers array
     customers.push(clientData);
@@ -298,6 +316,7 @@ function handleClientSubmit(e) {
     
     // Show success message
     alert('Customer added successfully!');
+    console.log('Customer added successfully:', clientData);
 }
 
 // Invoice functions
