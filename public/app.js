@@ -273,17 +273,48 @@ function togglePaymentDetails() {
     if (paymentMode === 'bank') {
         bankDetails.style.display = 'block';
         displayBank.style.display = 'block';
+        
+        // Set up event listeners for bank detail fields
+        setupBankFieldsEventListeners();
     } else {
         bankDetails.style.display = 'none';
         displayBank.style.display = 'none';
     }
+}
+
+function setupBankFieldsEventListeners() {
+    // Get all bank detail input fields
+    const bankName = document.getElementById('customer-bank-name');
+    const accountNumber = document.getElementById('customer-account-number');
+    const ifscCode = document.getElementById('customer-ifsc-code');
+    const accountHolder = document.getElementById('customer-account-holder');
+    const bankInfoHidden = document.getElementById('customer-bank-info');
     
-    // Update bank details display when input changes
-    const bankInfo = document.getElementById('customer-bank-info');
-    bankInfo.addEventListener('input', function() {
+    // Function to update the hidden field and display
+    const updateBankInfo = () => {
+        // Format the bank details
+        const formattedDetails = [
+            `Bank Name: ${bankName.value || ''}`,
+            `Account Number: ${accountNumber.value || ''}`,
+            `IFSC Code: ${ifscCode.value || ''}`,
+            `Account Holder: ${accountHolder.value || ''}`
+        ].join('\n');
+        
+        // Update the hidden field
+        bankInfoHidden.value = formattedDetails;
+        
+        // Update the display
         const bankDisplay = document.getElementById('display-bank-info');
-        bankDisplay.innerHTML = this.value.replace(/\n/g, '<br>');
+        bankDisplay.innerHTML = formattedDetails.replace(/\n/g, '<br>');
+    };
+    
+    // Add event listeners to all fields
+    [bankName, accountNumber, ifscCode, accountHolder].forEach(field => {
+        field.addEventListener('input', updateBankInfo);
     });
+    
+    // Initial update
+    updateBankInfo();
 }
 
 function addInvoiceItem() {
@@ -519,22 +550,11 @@ function closeMobileMenuOnNavClick() {
 }
 
 // Invoice functions
+// This function is now implemented at line 1190
 async function handleInvoiceSubmit(e) {
     e.preventDefault();
-    console.log('Invoice form submitted');
-    
-    // Get form data
-    const formData = new FormData(e.target);
-    const invoiceData = Object.fromEntries(formData.entries());
-    
-    try {
-        // Save invoice (placeholder for now)
-        console.log('Invoice data:', invoiceData);
-        alert('Invoice saved successfully!');
-    } catch (error) {
-        console.error('Error saving invoice:', error);
-        alert('Error saving invoice. Please try again.');
-    }
+    // Redirecting to the main implementation
+    return handleInvoiceSubmit(e);
 }
 
 function printInvoice() {
@@ -1158,8 +1178,74 @@ function updateInvoiceHeader() {
 // Form submission handlers
 function handleInvoiceSubmit(e) {
     e.preventDefault();
-    alert('Invoice saved successfully!');
-    // Add invoice saving logic here
+    
+    try {
+        // Get basic invoice data
+        const clientId = document.getElementById('client-select').value;
+        const description = document.getElementById('invoice-description').value;
+        const taxRate = document.getElementById('tax-rate').value;
+        const paymentMode = document.getElementById('payment-mode').value;
+        const notes = document.getElementById('invoice-notes').value;
+        
+        // Get bank details if payment mode is bank transfer
+        let bankDetails = null;
+        if (paymentMode === 'bank') {
+            bankDetails = {
+                bankName: document.getElementById('customer-bank-name').value,
+                accountNumber: document.getElementById('customer-account-number').value,
+                ifscCode: document.getElementById('customer-ifsc-code').value,
+                accountHolder: document.getElementById('customer-account-holder').value
+            };
+        }
+        
+        // Get items from the invoice
+        const itemsContainer = document.getElementById('invoice-items');
+        const itemRows = itemsContainer.querySelectorAll('.invoice-item');
+        const items = [];
+        
+        itemRows.forEach(row => {
+            const description = row.querySelector('.item-description').value;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value);
+            const rate = parseFloat(row.querySelector('.item-rate').value);
+            const amount = parseFloat(row.querySelector('.item-amount').textContent.replace('₹', ''));
+            
+            items.push({ description, quantity, rate, amount });
+        });
+        
+        // Calculate totals
+        const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('₹', ''));
+        const taxAmount = parseFloat(document.getElementById('tax-amount').textContent.replace('₹', ''));
+        const total = parseFloat(document.getElementById('total-amount').textContent.replace('₹', ''));
+        
+        // Create invoice object
+        const invoice = {
+            id: Date.now(),
+            number: document.getElementById('preview-invoice-number').textContent,
+            date: new Date().toISOString(),
+            clientId,
+            description,
+            taxRate,
+            paymentMode,
+            bankDetails,
+            notes,
+            items,
+            subtotal,
+            taxAmount,
+            total,
+            status: 'draft'
+        };
+        
+        // Save to localStorage
+        const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+        invoices.push(invoice);
+        localStorage.setItem('invoices', JSON.stringify(invoices));
+        
+        alert('Invoice saved successfully!');
+        showSection('invoices');
+    } catch (error) {
+        console.error('Error saving invoice:', error);
+        alert('Error saving invoice. Please try again.');
+    }
 }
 
 function handleClientSubmit(e) {
